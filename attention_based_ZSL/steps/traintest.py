@@ -109,24 +109,7 @@ def train(image_model, att_model, train_loader, test_seen_loader, test_unseen_lo
             label = label.long().to(device)
             image_input = image_input.float().to(device)
             image_input = image_input.squeeze(1)            
-            print('到这儿了~')
-            if i % 100 == 0:
-                # train: (8821,)
-                # trainval: (7057,)
-                # test_seen: (1764,)
-                # test_unseen: (2967,)
-                acc_zsl = compute_accuracy(image_model, att_model, test_unseen_loader, test_att, test_cls_id, 2967)
-                acc_seen_gzsl = compute_accuracy(image_model, att_model, test_seen_loader, all_att, all_cls_id, 1764)
-                acc_unseen_gzsl = compute_accuracy(image_model, att_model, test_unseen_loader, all_att, all_cls_id, 2967)
-                H = 2 * acc_seen_gzsl * acc_unseen_gzsl / (acc_seen_gzsl + acc_unseen_gzsl)
-                if acc_zsl > pre_acc:
-                    pre_acc = acc_zsl
-                    pre_seen = acc_seen_gzsl
-                    pre_useen = acc_unseen_gzsl
-                    pre_H = H
-
-                print('itr: %d | zsl: ACC=%.4f | gzsl: seen=%.4f, unseen=%.4f, h=%.4f' % (i,acc_zsl,acc_seen_gzsl, acc_unseen_gzsl, H))
-            
+    
             optimizer.zero_grad()
             optimizer_img.zero_grad()           
            
@@ -180,9 +163,7 @@ def train(image_model, att_model, train_loader, test_seen_loader, test_unseen_lo
                 hinge_IAA = criterion_hinge(image_output,att_output,neg_pair_att)
                 hinge_AII = criterion_hinge(att_output,image_output,neg_pair_image)
                 hinge_loss = hinge_AII + hinge_IAA
-                loss += hinge_loss*args.gamma_hinge
-
-            
+                loss += hinge_loss*args.gamma_hinge  
 
             loss.backward()
             optimizer.step()
@@ -195,19 +176,23 @@ def train(image_model, att_model, train_loader, test_seen_loader, test_unseen_lo
             if i % 5 == 0:                
                 print('iteration = %d | loss = %f '%(i,loss))
                 
-#             if i % 100 == 0:
-#                 acc_zsl = compute_accuracy(image_model, att_model, test_unseen_loader, test_att, test_cls_id, args)
-#                 acc_seen_gzsl = compute_accuracy(image_model, att_model, test_seen_loader, all_att, all_cls_id, args)
-#                 acc_unseen_gzsl = compute_accuracy(image_model, att_model, test_unseen_loader, all_att, all_cls_id, args)
-#                 H = 2 * acc_seen_gzsl * acc_unseen_gzsl / (acc_seen_gzsl + acc_unseen_gzsl)
-#                 if acc_zsl > pre_acc:
-#                     pre_acc = acc_zsl
-#                     pre_seen = acc_seen_gzsl
-#                     pre_useen = acc_unseen_gzsl
-#                     pre_H = H
+            if i % 100 == 0:
+                # train: (8821,)
+                # trainval: (7057,)
+                # test_seen: (1764,)
+                # test_unseen: (2967,)
+                acc_zsl = compute_accuracy(image_model, att_model, test_unseen_loader, test_att, test_cls_id, 2967)
+                acc_seen_gzsl = compute_accuracy(image_model, att_model, test_seen_loader, all_att, all_cls_id, 1764)
+                acc_unseen_gzsl = compute_accuracy(image_model, att_model, test_unseen_loader, all_att, all_cls_id, 2967)
+                H = 2 * acc_seen_gzsl * acc_unseen_gzsl / (acc_seen_gzsl + acc_unseen_gzsl)
+                if acc_zsl > pre_acc:
+                    pre_acc = acc_zsl
+                    pre_seen = acc_seen_gzsl
+                    pre_useen = acc_unseen_gzsl
+                    pre_H = H
 
-#                 print('itr: %d | zsl: ACC=%.4f | gzsl: seen=%.4f, unseen=%.4f, h=%.4f' % (i,acc_zsl,acc_seen_gzsl, acc_unseen_gzsl, H))
-            
+                print('itr: %d | zsl: ACC=%.4f | gzsl: seen=%.4f, unseen=%.4f, h=%.4f' % (i,acc_zsl,acc_seen_gzsl, acc_unseen_gzsl, H))
+                
 
 def compute_accuracy(image_model, att_model, test_loader, test_att, test_cls_id, dataset_len):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
