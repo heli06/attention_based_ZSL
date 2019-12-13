@@ -49,7 +49,7 @@ def get_imgs(img_path, bbox=None, transform=None, normalize=None):
 class ZSLDataset(data.Dataset):
     def __init__(self, data_dir, args, split='train',            
                  transform=None, target_transform=None):
-        self.args  = args
+        self.args = args
         self.split = split
         self.transform = transform
         self.norm = transforms.Compose([

@@ -8,7 +8,7 @@ import pickle
 from .kNN import kNNClassify
 from .util import *
 
-def train(image_model, att_model, train_loader, test_loader, args):
+def train(image_model, att_model, train_loader, test_seen_loader, test_unseen_loader, args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.set_grad_enabled(True)
     # Initialize all of the statistics we want to keep track of
@@ -82,7 +82,7 @@ def train(image_model, att_model, train_loader, test_loader, args):
     criterion_k = nn.KLDivLoss()    
     
     # 载入ZSL和GZSL评估所需要的id和attr文件
-    # 
+    print('载入id和attr文件')
     test_attr_file = os.path.join(args.data_path, args.test_class_attr)
     test_att = np.loadtxt(test_attr_file)
     test_id_file = os.path.join(args.data_path, args.test_class_id)
@@ -109,12 +109,29 @@ def train(image_model, att_model, train_loader, test_loader, args):
             label = label.long().to(device)
             image_input = image_input.float().to(device)
             image_input = image_input.squeeze(1)            
+            print('到这儿了~')
+            if i % 100 == 0:
+                # train: (8821,)
+                # trainval: (7057,)
+                # test_seen: (1764,)
+                # test_unseen: (2967,)
+                acc_zsl = compute_accuracy(image_model, att_model, test_unseen_loader, test_att, test_cls_id, 2967)
+                acc_seen_gzsl = compute_accuracy(image_model, att_model, test_seen_loader, all_att, all_cls_id, 1764)
+                acc_unseen_gzsl = compute_accuracy(image_model, att_model, test_unseen_loader, all_att, all_cls_id, 2967)
+                H = 2 * acc_seen_gzsl * acc_unseen_gzsl / (acc_seen_gzsl + acc_unseen_gzsl)
+                if acc_zsl > pre_acc:
+                    pre_acc = acc_zsl
+                    pre_seen = acc_seen_gzsl
+                    pre_useen = acc_unseen_gzsl
+                    pre_H = H
+
+                print('itr: %d | zsl: ACC=%.4f | gzsl: seen=%.4f, unseen=%.4f, h=%.4f' % (i,acc_zsl,acc_seen_gzsl, acc_unseen_gzsl, H))
             
             optimizer.zero_grad()
             optimizer_img.zero_grad()           
            
             image_output = image_model(image_input)                            
-            att_output = att_model(att_input)    
+            att_output = att_model(att_input)   
                 # print('--------------------------------------------------------------------')
                 # print('Best_zsl:', pre_acc)
                 # print('According_gzsl: seen=%.4f, unseen=%.4f, h=%.4f' % (pre_seen, pre_useen, pre_H))
@@ -178,22 +195,21 @@ def train(image_model, att_model, train_loader, test_loader, args):
             if i % 5 == 0:                
                 print('iteration = %d | loss = %f '%(i,loss))
                 
-            if i % 100 == 0:
-                acc_zsl = compute_accuracy(image_model, att_model, test_loader, test_att, test_cls_id, args)
-                acc_seen_gzsl = compute_accuracy(image_model, att_model, test_loader, all_att, all_cls_id, args)
-                acc_unseen_gzsl = compute_accuracy(image_model, att_model, test_loader, all_att, all_cls_id, args)
-                H = 2 * acc_seen_gzsl * acc_unseen_gzsl / (acc_seen_gzsl + acc_unseen_gzsl)
-                v
-                if acc_zsl > pre_acc:
-                    pre_acc = acc_zsl
-                    pre_seen = acc_seen_gzsl
-                    pre_useen = acc_unseen_gzsl
-                    pre_H = H
+#             if i % 100 == 0:
+#                 acc_zsl = compute_accuracy(image_model, att_model, test_unseen_loader, test_att, test_cls_id, args)
+#                 acc_seen_gzsl = compute_accuracy(image_model, att_model, test_seen_loader, all_att, all_cls_id, args)
+#                 acc_unseen_gzsl = compute_accuracy(image_model, att_model, test_unseen_loader, all_att, all_cls_id, args)
+#                 H = 2 * acc_seen_gzsl * acc_unseen_gzsl / (acc_seen_gzsl + acc_unseen_gzsl)
+#                 if acc_zsl > pre_acc:
+#                     pre_acc = acc_zsl
+#                     pre_seen = acc_seen_gzsl
+#                     pre_useen = acc_unseen_gzsl
+#                     pre_H = H
 
-                print('itr: %d | zsl: ACC=%.4f | gzsl: seen=%.4f, unseen=%.4f, h=%.4f' % (i,acc_zsl,acc_seen_gzsl, acc_unseen_gzsl, H))
+#                 print('itr: %d | zsl: ACC=%.4f | gzsl: seen=%.4f, unseen=%.4f, h=%.4f' % (i,acc_zsl,acc_seen_gzsl, acc_unseen_gzsl, H))
             
 
-def compute_accuracy(image_model, att_model, test_loader, test_att, test_cls_id, args):
+def compute_accuracy(image_model, att_model, test_loader, test_att, test_cls_id, dataset_len):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print('compute_accuracy--------------------')
     test_size = args.testset_len
@@ -216,14 +232,14 @@ def compute_accuracy(image_model, att_model, test_loader, test_att, test_cls_id,
         test_att_output = att_model(test_att)
         test_att_output = test_att_output / test_att_output.norm(dim=1,keepdim=True)
         
-        if i == 0:
-            print(image_input.size())
-            print(image_output.size())
-            print(att_output.size())
-            print(test_att_output.size())
-            print(cls_id.size())
-            print(test_cls_id.shape)
-            print(label.size())
+#         if i == 0:
+#             print(image_input.size())
+#             print(image_output.size())
+#             print(att_output.size())
+#             print(test_att_output.size())
+#             print(cls_id.size())
+#             print(test_cls_id.shape)
+#             print(label.size())
 #             torch.Size([20, 3, 244, 244])
 #             torch.Size([20, 2048])
 #             torch.Size([20, 2048])
