@@ -16,6 +16,9 @@ from steps import train
 import torchvision.transforms as transforms 
 import scipy.io as sio
 
+# 指定使用的显卡，选利用率低的
+os.environ['CUDA_VISIBLE_DEVICES']='1, 3'
+
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 #'/media/shawn/data/Data/birds'
 #'/tudelft.net/staff-bulk/ewi/insy/MMC/xinsheng/data/birds'
@@ -125,7 +128,7 @@ print('class_id.__len__()', dataset_test.class_id.__len__())
 # test_seen: (1764,)
 # test_unseen: (2967,)
 n_train = 8821
-split = 7058
+split = 7057
 indices = list(range(n_train))
 random.shuffle(indices)
 

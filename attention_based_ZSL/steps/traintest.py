@@ -94,6 +94,7 @@ def train(image_model, att_model, train_loader, test_seen_loader, test_unseen_lo
     all_cls_id = np.loadtxt(all_id_file, dtype='int32')
     
     
+    pre_acc = 0
     while epoch<=500:
         epoch += 1
         adjust_learning_rate(args.lr_A, args.lr_decay, optimizer, epoch)
@@ -191,13 +192,13 @@ def train(image_model, att_model, train_loader, test_seen_loader, test_unseen_lo
                     pre_useen = acc_unseen_gzsl
                     pre_H = H
 
-                print('itr: %d | zsl: ACC=%.4f | gzsl: seen=%.4f, unseen=%.4f, h=%.4f' % (i,acc_zsl,acc_seen_gzsl, acc_unseen_gzsl, H))
+                print('itr: %d | zsl: ACC=%.4f | gzsl: seen=%.4f, unseen=%.4f, h=%.4f' % (i,acc_zsl, acc_seen_gzsl, acc_unseen_gzsl, H))
                 
 
 def compute_accuracy(image_model, att_model, test_loader, test_att, test_cls_id, dataset_len):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print('compute_accuracy--------------------')
-    test_size = args.testset_len
+    test_size = dataset_len
     outpred = [0] * test_size
     test_label = []
     print('test_att.shape', test_att.shape)
@@ -241,4 +242,5 @@ def compute_accuracy(image_model, att_model, test_loader, test_att, test_cls_id,
     outpred = np.array(outpred)
     test_label = np.array(test_label)
     acc = np.equal(outpred, test_label).mean()
+    print('acc: ', acc)
     return acc          
