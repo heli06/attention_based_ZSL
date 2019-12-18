@@ -211,7 +211,8 @@ def compute_accuracy(image_model, att_model, test_loader, test_att, test_cls_id,
         
         image_input = image_input.float().to(device)
         image_input = image_input.squeeze(1) 
-        image_output = image_model(image_input)         
+        image_output = image_model(image_input)  
+        image_output = image_output / image_output.norm(dim=1,keepdim=True)
         
         att_output = att_model(att_input)
         att_output = att_output / att_output.norm(dim=1,keepdim=True)
