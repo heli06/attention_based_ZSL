@@ -192,7 +192,7 @@ def train(image_model, att_model, train_loader, test_seen_loader, test_unseen_lo
                     pre_useen = acc_unseen_gzsl
                     pre_H = H
 
-                print('itr: %d | zsl: ACC=%.4f | gzsl: seen=%.4f, unseen=%.4f, h=%.4f' % (i,acc_zsl, acc_seen_gzsl, acc_unseen_gzsl, H))
+                print('epoch: %d | itr: %d | zsl: ACC=%.4f | gzsl: seen=%.4f, unseen=%.4f, h=%.4f' % (epoch, i, acc_zsl, acc_seen_gzsl, acc_unseen_gzsl, H))
                 
 
 def compute_accuracy(image_model, att_model, test_loader, test_att, test_cls_id, dataset_len):
