@@ -65,6 +65,11 @@ class ZSLDataset(data.Dataset):
             self.filenames = self.load_filenames(data_dir,'filenames_train.pickle')
             self.class_id = self.load_filenames(data_dir,'class_ids_train.pickle')
             self.attributes = self.load_filenames(data_dir,'attributes_train.pickle')
+            
+        elif split == 'test_seen':
+            self.filenames = self.load_filenames(data_dir,'filenames_test_seen.pickle')
+            self.class_id = self.load_filenames(data_dir,'class_ids_test_seen.pickle')
+            self.attributes = self.load_filenames(data_dir,'attributes_test_seen.pickle')
         
         else:
             self.filenames = self.load_filenames(data_dir,'filenames_test.pickle')

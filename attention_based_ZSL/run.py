@@ -69,6 +69,10 @@ parser.add_argument('--test_class_attr',default = 'test_class_attribute_labels_c
 parser.add_argument('--all_class_id',default = 'all_class_id.txt')
 parser.add_argument('--all_class_attr',default = 'class_attribute_labels_continuous.txt')
 
+# trainset, test_seen_set, test_set
+parser.add_argument('--train_set_len', type=int, default = 7051)
+parser.add_argument('--test_seen_set_len', type=int, default = 1770)
+parser.add_argument('--test_set_len', type=int, default = 2967)
 
 args = parser.parse_args()
 
@@ -95,64 +99,33 @@ image_transform = transforms.Compose([
     transforms.RandomHorizontalFlip()])
 
 
-dataset = ZSLDataset(args.data_path, args,'train',
+dataset_train = ZSLDataset(args.data_path, args,'train',
                         transform=image_transform)
+
+dataset_test_seen = ZSLDataset(args.data_path, args,'test_seen',                        
+                        transform=image_transform)
+
 dataset_test = ZSLDataset(args.data_path, args,'test',                        
                         transform=image_transform)
 
-parser.add_argument('testset_len',type=int,default = dataset_test.__len__())
-
-print('dataset.__len__(): ', dataset.__len__()) # 8821
-print('dataset_test.__len__(): ', dataset_test.__len__()) # 2967
-print('len(dataset_test.attributes)', len(dataset_test.attributes))
-print('type(dataset_test.attributes[0]), len', type(dataset_test.attributes[0]), len(dataset_test.attributes[0]))
-print('attributes[0].shape', dataset_test.attributes[0].shape)
-print('class_id.__len__()', dataset_test.class_id.__len__())
-# print('class_id', dataset_test.class_id)
-
-# 本来想用参考代码里的划分，但出现list out of range错误，不用了
-# split_file = os.path.join(args.data_path, 'att_splits.mat')
-# matcontent = sio.loadmat(split_file)
-# numpy array index starts from 0, matlab starts from 1
-# trainval_loc = matcontent['trainval_loc'].squeeze() - 1
-# np.random.shuffle(trainval_loc)
-# test_seen_loc = matcontent['test_seen_loc'].squeeze() - 1
-# np.random.shuffle(test_seen_loc)
-# test_unseen_loc = matcontent['test_unseen_loc'].squeeze() - 1
-# np.random.shuffle(test_unseen_loc)
-
-
-# 使用pytorch的sampler，从原本的训练集里切出一部分作为x_test_seen
-# train: (8821,)
-# trainval: (7057,)
-# test_seen: (1764,)
-# test_unseen: (2967,)
-n_train = 8821
-split = 7057
-indices = list(range(n_train))
-random.shuffle(indices)
-
-trainval_loc = np.asarray(indices[:split])
-test_seen_loc = np.asarray(indices[split:])
-
-indices_trainval = torch.from_numpy(trainval_loc.astype(np.int32))
-indices_test_seen = torch.from_numpy(test_seen_loc.astype(np.int32))
-train_sampler = torch.utils.data.sampler.SubsetRandomSampler(indices_trainval)
-test_seen_sampler = torch.utils.data.sampler.SubsetRandomSampler(indices_test_seen)
-print(indices_trainval.size())
-print(indices_test_seen.size())
+# dataset_train.len 7051
+# dataset_test_seen 1770
+# dataset_test 2967
+print('dataset_train.len', dataset_train.__len__())
+print('dataset_test_seen', dataset_test_seen.__len__())
+print('dataset_test', dataset_test.__len__())
 
 train_loader = torch.utils.data.DataLoader(
-    dataset, batch_size=args.batch_size, sampler=train_sampler, 
-    drop_last=True, num_workers=args.workers,worker_init_fn=worker_init_fn)
+    dataset_train, batch_size=args.batch_size,
+    drop_last=True, shuffle=True, num_workers=args.workers,worker_init_fn=worker_init_fn)
 
 test_seen_loader = torch.utils.data.DataLoader(
-    dataset, batch_size=args.batch_size, sampler=test_seen_sampler, 
+    dataset_test_seen, batch_size=args.batch_size,
     drop_last=False, num_workers=args.workers,worker_init_fn=worker_init_fn)
 
 test_unseen_loader = torch.utils.data.DataLoader(
     dataset_test, batch_size=args.batch_size,
-    drop_last=False, shuffle=False,num_workers=args.workers,worker_init_fn=worker_init_fn)
+    drop_last=False, shuffle=False,num_workers=args.workers, worker_init_fn=worker_init_fn)
 
 image_model = ImageModels.Resnet101()
 att_model = AttModels.AttEncoder(args)

@@ -7,6 +7,7 @@ import numpy as np
 import pickle
 from .kNN import kNNClassify
 from .util import *
+from sklearn.metrics import accuracy_score
 
 def train(image_model, att_model, train_loader, test_seen_loader, test_unseen_loader, args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -85,14 +86,15 @@ def train(image_model, att_model, train_loader, test_seen_loader, test_unseen_lo
     print('载入id和attr文件')
     test_attr_file = os.path.join(args.data_path, args.test_class_attr)
     test_att = np.loadtxt(test_attr_file)
-    test_id_file = os.path.join(args.data_path, args.test_class_id)
-    test_cls_id = np.loadtxt(test_id_file, dtype='int32')
-    
+   
     all_attr_file = os.path.join(args.data_path, args.all_class_attr)
     all_att = np.loadtxt(all_attr_file)
-    all_id_file = os.path.join(args.data_path, args.all_class_id)
-    all_cls_id = np.loadtxt(all_id_file, dtype='int32')
     
+    test_id_file = os.path.join(args.data_path, args.test_class_id)
+    test_id = np.loadtxt(test_id_file, dtype=int)
+    
+    all_id_file = os.path.join(args.data_path, args.all_class_id)
+    all_id = np.loadtxt(all_id_file, dtype=int)
     
     pre_acc = 0
     while epoch<=500:
@@ -182,9 +184,9 @@ def train(image_model, att_model, train_loader, test_seen_loader, test_unseen_lo
                 # trainval: (7057,)
                 # test_seen: (1764,)
                 # test_unseen: (2967,)
-                acc_zsl = compute_accuracy(image_model, att_model, test_unseen_loader, test_att, test_cls_id, 2967)
-                acc_seen_gzsl = compute_accuracy(image_model, att_model, test_seen_loader, all_att, all_cls_id, 1764)
-                acc_unseen_gzsl = compute_accuracy(image_model, att_model, test_unseen_loader, all_att, all_cls_id, 2967)
+                acc_zsl = compute_accuracy(image_model, att_model, test_unseen_loader, test_att, test_id, args)
+                acc_seen_gzsl = compute_accuracy(image_model, att_model, test_seen_loader, all_att, all_id, args)
+                acc_unseen_gzsl = compute_accuracy(image_model, att_model, test_unseen_loader, all_att, all_id, args)
                 H = 2 * acc_seen_gzsl * acc_unseen_gzsl / (acc_seen_gzsl + acc_unseen_gzsl)
                 if acc_zsl > pre_acc:
                     pre_acc = acc_zsl
@@ -195,19 +197,20 @@ def train(image_model, att_model, train_loader, test_seen_loader, test_unseen_lo
                 print('epoch: %d | itr: %d | zsl: ACC=%.4f | gzsl: seen=%.4f, unseen=%.4f, h=%.4f' % (epoch, i, acc_zsl, acc_seen_gzsl, acc_unseen_gzsl, H))
                 
 
-def compute_accuracy(image_model, att_model, test_loader, test_att, test_cls_id, dataset_len):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+def compute_accuracy(image_model, att_model, test_loader, test_att, test_id, args):
     print('compute_accuracy--------------------')
-    test_size = dataset_len
-    outpred = [0] * test_size
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    outpred = []
     test_label = []
     print('test_att.shape', test_att.shape)
     test_att = torch.from_numpy(test_att)
+    test_att = test_att.float().to(device)
+    test_att_output = att_model(test_att)
+    test_att_output = test_att_output / test_att_output.norm(dim=1,keepdim=True)
     
     for i, (image_input, att_input, cls_id, key, label) in enumerate(test_loader):
         att_input = att_input.float().to(device)
-        test_att = test_att.float().to(device)       
-        label = label.long().to(device)
+        label = list(label.numpy())
         
         image_input = image_input.float().to(device)
         image_input = image_input.squeeze(1) 
@@ -216,32 +219,22 @@ def compute_accuracy(image_model, att_model, test_loader, test_att, test_cls_id,
         
         att_output = att_model(att_input)
         att_output = att_output / att_output.norm(dim=1,keepdim=True)
-        test_att_output = att_model(test_att)
-        test_att_output = test_att_output / test_att_output.norm(dim=1,keepdim=True)
         
-#         if i == 0:
-#             print(image_input.size())
-#             print(image_output.size())
-#             print(att_output.size())
-#             print(test_att_output.size())
-#             print(cls_id.size())
-#             print(test_cls_id.shape)
-#             print(label.size())
-#             torch.Size([20, 3, 244, 244])
-#             torch.Size([20, 2048])
-#             torch.Size([20, 2048])
-#             torch.Size([200, 2048])
-#             torch.Size([20])
-#             (200,)
-#             torch.Size([20])
-        for j in range(label.size()[0]):
-            outputLabel = kNNClassify(image_output.cpu().data.numpy()[j, :], test_att_output.cpu().data.numpy(), test_cls_id, 1)
-            outpred[i*20+j] = outputLabel
-            
-        test_label.extend(label)
+        for j in range(len(label)):
+            outputLabel = kNNClassify(image_output.cpu().data.numpy()[j, :], test_att_output.cpu().data.numpy(), test_id, 1)
+            outpred.append(outputLabel)
+            test_label.append(label[j])
     
     outpred = np.array(outpred)
     test_label = np.array(test_label)
-    acc = np.equal(outpred, test_label).mean()
+    unique_labels = np.unique(test_label)
+    
+    acc = 0
+    for l in unique_labels:
+        idx = np.nonzero(test_label == l)[0]
+        acc += accuracy_score(test_label[idx], outpred[idx])
+        
+    acc = acc / unique_labels.shape[0]
+    # acc = np.equal(outpred, test_label).mean()
     print('acc: ', acc)
     return acc          
