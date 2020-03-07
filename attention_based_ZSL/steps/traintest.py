@@ -9,7 +9,7 @@ from .kNN import kNNClassify
 from .util import *
 from sklearn.metrics import accuracy_score
 
-def train(image_model, att_model, train_loader, test_seen_loader, test_unseen_loader, args):
+def train(image_model, att_model, mod_model, train_loader, test_seen_loader, test_unseen_loader, args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.set_grad_enabled(True)
     # Initialize all of the statistics we want to keep track of
@@ -38,10 +38,12 @@ def train(image_model, att_model, train_loader, test_seen_loader, test_unseen_lo
         print("loaded parameters from epoch %d" % epoch)
     
     image_model = image_model.to(device)
-    att_model = att_model.to(device)    
+    att_model = att_model.to(device)
+    mod_model = mod_model.to(device)
     # Set up the optimizer
     image_trainables = [p for p in image_model.parameters() if p.requires_grad] # if p.requires_grad
     att_trainables = [p for p in att_model.parameters() if p.requires_grad]
+    mod_trainables = [p for p in mod_model.parameters() if p.requires_grad]
     
     
     if args.optim == 'sgd':
@@ -49,15 +51,21 @@ def train(image_model, att_model, train_loader, test_seen_loader, test_unseen_lo
                                     momentum=args.momentum,
                                     weight_decay=args.weight_decay)
         optimizer_img = torch.optim.SGD(image_trainables, args.lr_I,
-                                momentum=args.momentum,
-                                weight_decay=args.weight_decay)
+                                    momentum=args.momentum,
+                                    weight_decay=args.weight_decay)
+        optimizer_mod = torch.optim.SGD(mod_trainables, args.lr_M,
+                                    momentum=args.momentum,
+                                    weight_decay=args.weight_decay)
     elif args.optim == 'adam':
-        optimizer = torch.optim.Adam(att_trainables, args.lr_I,
-                                weight_decay=args.weight_decay,
-                                betas=(0.95, 0.999))
+        optimizer = torch.optim.Adam(att_trainables, args.lr_A,
+                                    weight_decay=args.weight_decay,
+                                    betas=(0.95, 0.999))
         optimizer_img = torch.optim.Adam(image_trainables, args.lr_I,
-                                weight_decay=args.weight_decay,
-                                betas=(0.95, 0.999))
+                                    weight_decay=args.weight_decay,
+                                    betas=(0.95, 0.999))
+        optimizer_mod = torch.optim.Adam(mod_trainables, args.lr_M,
+                                    weight_decay=args.weight_decay,
+                                    betas=(0.95, 0.999))
     else:
         raise ValueError('Optimizer %s is not supported' % args.optim)
     
@@ -76,11 +84,12 @@ def train(image_model, att_model, train_loader, test_seen_loader, test_unseen_lo
     print("start training...")
     image_model.train()
     att_model.train()
+    mod_model.train()
     criterion_hinge = nn.TripletMarginLoss(margin=1.0,p=2)
     criterion_e = nn.MSELoss()
     criterion_s = nn.CosineSimilarity()
     criterion_c = nn.CrossEntropyLoss()    
-    criterion_k = nn.KLDivLoss()    
+    criterion_k = nn.KLDivLoss()
     
     # 载入ZSL和GZSL评估所需要的id和attr文件
     print('载入id和attr文件')
@@ -101,9 +110,11 @@ def train(image_model, att_model, train_loader, test_seen_loader, test_unseen_lo
         epoch += 1
         adjust_learning_rate(args.lr_A, args.lr_decay, optimizer, epoch)
         adjust_learning_rate(args.lr_I, args.lr_decay, optimizer_img, epoch)
+        adjust_learning_rate(args.lr_M, args.lr_decay, optimizer_mod, epoch)
         end_time = time.time()
         image_model.train()
         att_model.train()
+        mod_model.train()
 
         for i, (image_input, att_input, cls_id, key, label) in enumerate(train_loader):
             
@@ -114,10 +125,13 @@ def train(image_model, att_model, train_loader, test_seen_loader, test_unseen_lo
             image_input = image_input.squeeze(1)            
     
             optimizer.zero_grad()
-            optimizer_img.zero_grad()           
+            optimizer_img.zero_grad()
+            optimizer_mod.zero_grad()
            
             image_output = image_model(image_input)                            
-            att_output = att_model(att_input)   
+            att_output = att_model(att_input)
+            modal_image_output = mod_model(image_output)
+            modal_att_output = mod_model(att_output)
                 # print('--------------------------------------------------------------------')
                 # print('Best_zsl:', pre_acc)
                 # print('According_gzsl: seen=%.4f, unseen=%.4f, h=%.4f' % (pre_seen, pre_useen, pre_H))
@@ -166,43 +180,75 @@ def train(image_model, att_model, train_loader, test_seen_loader, test_unseen_lo
                 hinge_IAA = criterion_hinge(image_output,att_output,neg_pair_att)
                 hinge_AII = criterion_hinge(att_output,image_output,neg_pair_image)
                 hinge_loss = hinge_AII + hinge_IAA
-                loss += hinge_loss*args.gamma_hinge  
+                loss += hinge_loss*args.gamma_hinge
+
+            if args.Loss_modal:
+                # 第一种写法，跑过一次准确率反而降低了
+                # y0 = np.zeros((args.batch_size,), dtype=np.int)
+                # y0 = torch.from_numpy(y0).to(device)
+                # y1 = np.ones((args.batch_size,), dtype=np.int)
+                # y1 = torch.from_numpy(y1).to(device)
+
+                # modal_image_loss = criterion_c(modal_image_output, y0)
+                # modal_att_loss = criterion_c(modal_att_output, y1)
+                # modal_loss = (modal_image_loss + modal_att_loss) * args.gamma_modal
+                # # 这里类似G的角色，试图让D无法区分，尝试让modal_loss增大，所以是负号
+                # loss -= modal_loss
+
+                # 这里是C
+                # modal_loss.backward(retain_graph=True)  # reusing computational graph
+                # optimizer_mod.step()
+
+                #  试试第二种写法
+                # 以下为假定
+                # prob_image0输出的是判断由图像特征向量转换而来的向量之前是来自图片的概率
+                # prob_image1输出的是判断由属性向量转换而来的向量之前是来自图片的概率
+                temp = 1e-5
+                prob_image0 = modal_image_output[:,0]
+                prob_image1 = modal_att_output[:,0]
+                T_loss = -torch.mean(torch.log(1. - prob_image0 + temp) + torch.log(prob_image1 + temp))
+                C_loss = -torch.mean(torch.log(prob_image0 + temp) + torch.log(1. - prob_image1 + temp))
+                Adv_loss = T_loss + C_loss
+                loss += Adv_loss * args.gamma_modal
 
             loss.backward()
             optimizer.step()
-            optimizer_img.step()        
+            optimizer_img.step()
+            optimizer_mod.step()
             
             # record loss
             loss_meter.update(loss.item(), B)
             batch_time.update(time.time() - end_time)
             
-            if i % 5 == 0:                
-                print('iteration = %d | loss = %f '%(i,loss))
+            if i % 5 == 0:
+                print('epoch: %d | iteration = %d | loss = %f | Adv_loss = %f'%(epoch, i, loss, Adv_loss))
                 
-            if i % 100 == 0:
-                # train: (8821,)
-                # trainval: (7057,)
-                # test_seen: (1764,)
-                # test_unseen: (2967,)
-                acc_zsl = compute_accuracy(image_model, att_model, test_unseen_loader, test_att, test_id, args)
-                acc_seen_gzsl = compute_accuracy(image_model, att_model, test_seen_loader, all_att, all_id, args)
-                acc_unseen_gzsl = compute_accuracy(image_model, att_model, test_unseen_loader, all_att, all_id, args)
-                H = 2 * acc_seen_gzsl * acc_unseen_gzsl / (acc_seen_gzsl + acc_unseen_gzsl)
-                if acc_zsl > pre_acc:
-                    pre_acc = acc_zsl
-                    pre_seen = acc_seen_gzsl
-                    pre_useen = acc_unseen_gzsl
-                    pre_H = H
+        if epoch % 2 == 0:
+            # train: (8821,)
+            # trainval: (7057,)
+            # test_seen: (1764,)
+            # test_unseen: (2967,)
+            image_model.eval()
+            att_model.eval()
+            mod_model.eval()
+            acc_zsl = compute_accuracy(image_model, att_model, test_unseen_loader, test_att, test_id, args)
+            acc_seen_gzsl = compute_accuracy(image_model, att_model, test_seen_loader, all_att, all_id, args)
+            acc_unseen_gzsl = compute_accuracy(image_model, att_model, test_unseen_loader, all_att, all_id, args)
+            H = 2 * acc_seen_gzsl * acc_unseen_gzsl / (acc_seen_gzsl + acc_unseen_gzsl)
+            if acc_zsl > pre_acc:
+                pre_acc = acc_zsl
+                pre_seen = acc_seen_gzsl
+                pre_useen = acc_unseen_gzsl
+                pre_H = H
 
-                print('epoch: %d | itr: %d | zsl: ACC=%.4f | gzsl: seen=%.4f, unseen=%.4f, h=%.4f' % (epoch, i, acc_zsl, acc_seen_gzsl, acc_unseen_gzsl, H))
+            print('epoch: %d | itr: %d | zsl: ACC=%.4f | gzsl: seen=%.4f, unseen=%.4f, h=%.4f' % (epoch, i, acc_zsl, acc_seen_gzsl, acc_unseen_gzsl, H))
                 
 
 def compute_accuracy(image_model, att_model, test_loader, test_att, test_id, args):
-    print('compute_accuracy--------------------')
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     outpred = []
     test_label = []
-    print('test_att.shape', test_att.shape)
+    
     test_att = torch.from_numpy(test_att)
     test_att = test_att.float().to(device)
     test_att_output = att_model(test_att)
@@ -236,5 +282,4 @@ def compute_accuracy(image_model, att_model, test_loader, test_att, test_id, arg
         
     acc = acc / unique_labels.shape[0]
     # acc = np.equal(outpred, test_label).mean()
-    print('acc: ', acc)
     return acc          

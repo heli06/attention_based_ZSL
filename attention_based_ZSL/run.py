@@ -11,13 +11,13 @@ import dateutil.tz
 import numpy as np
 from PIL import Image
 from dataloaders.dataset import ZSLDataset
-from models import  ImageModels, AttModels
+from models import ImageModels, AttModels, ImageModels2, ModalityClassifier
 from steps import train
 import torchvision.transforms as transforms 
 import scipy.io as sio
 
 # 指定使用的显卡，选利用率低的
-os.environ['CUDA_VISIBLE_DEVICES']='1, 3'
+os.environ['CUDA_VISIBLE_DEVICES']='0, 1, 2, 3'
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 #'/media/shawn/data/Data/birds'
@@ -29,12 +29,14 @@ parser.add_argument("--resume", action="store_true", default=True,
         help="load from exp_dir if True")
 parser.add_argument("--optim", type=str, default="adam",
         help="training optimizer", choices=["sgd", "adam"])
-parser.add_argument('--batch_size', '--batch_size', default=20, type=int,
+parser.add_argument('--batch_size', '--batch_size', default=64, type=int,
     metavar='N', help='mini-batch size (default: 100)')
 parser.add_argument('--workers',default=0,type=int,help='number of worker in the dataloader')
 parser.add_argument('--lr_A', '--learning-rate-attribute', default=0.001, type=float,
     metavar='LR', help='initial learning rate')
 parser.add_argument('--lr_I', '--learning-rate-image', default=0.001, type=float,
+    metavar='LR', help='initial learning rate')
+parser.add_argument('--lr_M', '--learning-rate-modal', default=0.001, type=float,
     metavar='LR', help='initial learning rate')
 parser.add_argument('--lr-decay', default=100, type=int, metavar='LRDECAY',
     help='Divide the learning rate by 10 every lr_decay epochs')
@@ -60,6 +62,8 @@ parser.add_argument('--Loss_dist',default = False)
 parser.add_argument('--gamma_dist',default = 1.0)
 parser.add_argument('--Loss_hinge',default = False)
 parser.add_argument('--gamma_hinge',default = 1.0)
+parser.add_argument('--Loss_modal', default=True)
+parser.add_argument('--gamma_modal', type=float, default=0.1)
 
 parser.add_argument('--smooth_gamma',type=float,default=10)
 
@@ -128,7 +132,9 @@ test_unseen_loader = torch.utils.data.DataLoader(
     drop_last=False, shuffle=False,num_workers=args.workers, worker_init_fn=worker_init_fn)
 
 image_model = ImageModels.Resnet101()
+# image_model = ImageModels2.Resnet101()
 att_model = AttModels.AttEncoder(args)
+mod_model = ModalityClassifier.ModalityClassifier(args)
 
-train(image_model, att_model, train_loader, test_seen_loader, test_unseen_loader, args)
+train(image_model, att_model, mod_model, train_loader, test_seen_loader, test_unseen_loader, args)
     
