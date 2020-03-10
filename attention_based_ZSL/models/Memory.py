@@ -25,35 +25,57 @@ def attention(query, key, value, dropout=None):
     return torch.matmul(p_attn, value), p_attn
 
 class MultiHeadedAttention(nn.Module):
-    def __init__(self, h, d_model, dropout=0.1):
+    def __init__(self, num_heads=4, attention_type='mlp_attention',
+                num_units=None, normalize=True, args):
         '''
         接收模型size和注意力头的数量
         '''
         super(MultiHeadedAttention, self).__init__()
-        assert d_model % h == 0
-        # 假设 d_v 等于 d_k
-        self.d_k = d_model // h
-        self.h = h
-        self.linears = clones(nn.Linear(d_model, d_model), 4)
-        self.attn = None
-        self.dropout = nn.Dropout(p=dropout)
+        self.num_heads = num_heads
+        self.attention_type = attention_type
+        self.num_units = num_units
+        self.normalize = normalize
+        self.conv1d = nn.Conv1d(args.num_gst, args.num_gst, 2048)
 
-    def forward(self, query, key, value):
-        '''
-        参考图2
-        '''
-        nbatches = query.size(0)
+    def forward(self, query, value):
+        if self.num_units % self.num_heads != 0:
+            raise ValueError('ERROR')
 
-        # 作 d_model => h * d_k 的线性映射
-        query, key, value = \
-            [l(x).view(nbatches, -1, self.h, self.d_k).transpose(
-                1, 2) for l, x in zip(self.linears, (query, key, value))]
+        q = query
+        k = self.conv1d(value)
+        v = value
+        qs, ks, vs = self._split_heads(q, k, v)
+        if self.attention_type == 'mlp_attention':
+            style_embeddings = self._mlp_attention(qs, ks, vs)
 
-        # 将注意力机制分批次应用到所有映射后的向量
-        x, self.attn = attention(query, key, value,
-                                 dropout=self.dropout)
+        return self._combine_heads(style_embeddings)
 
-        # 用view连接，作最后的线性映射
-        x = x.transpose(1, 2).contiguous().view(
-            nbatches, -1, self.h * self.d_k)
-        return self.linears(-1)(x)
+    def _split_heads(self, q, k, v):
+        qs = self._split_last_dimension(q, self.num_heads).permute(0, 2, 1, 3)
+        ks = self._split_last_dimension(k, self.num_heads).permute(0, 2, 1, 3)
+        v_shape = v.size()
+        vs = v.unsqueeze(1).repeat(1, self.num_heads, 1, 1)
+        return qs, ks, vs
+
+    def _split_last_dimension(self, x, num_heads):
+        x_shape = x.size()
+        dim = x_shape[-1]
+        assert dim % num_heads == 0
+        return x.reshape(x_shape[:-1] + [num_heads, dim // num_heads])
+
+class MemoryFusion(nn.Module):
+    def __init__(self, args):
+        super(MemoryFusion, self).__init__()
+        self.tokens = torch.normal(mean=0., std=0.5, size=(
+            args.num_gst, args.style_embed_depth // args.num_heads))
+        self.image_attn = MultiHeadedAttention(
+            args.num_heads, args.style_attn_dim, args.style_att_type)
+        self.attr_attn = MultiHeadedAttention(
+            args.num_heads, args.style_attn_dim, args.style_att_type)
+
+    def forward(self, z_image, z_attr, key, value):
+        batch_size = z_image.size()[0]
+        output_image = self.image_attn(
+            z_image.unsqueeze(1), self.tokens.repeat(batch_size, 1, 1))
+        output_attr = self.attr_attn(
+            z_attr.unsqueeze(1), self.tokens.repeat(batch_size, 1, 1))
