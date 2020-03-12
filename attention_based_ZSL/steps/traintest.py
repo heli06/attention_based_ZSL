@@ -9,7 +9,8 @@ from .kNN import kNNClassify
 from .util import *
 from sklearn.metrics import accuracy_score
 
-def train(image_model, att_model, mod_model, train_loader, test_seen_loader, test_unseen_loader, args):
+def train(image_model, att_model, mod_model, mod_transformer, memory_fusion,
+          train_loader, test_seen_loader, test_unseen_loader, args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.set_grad_enabled(True)
     # Initialize all of the statistics we want to keep track of
@@ -40,6 +41,8 @@ def train(image_model, att_model, mod_model, train_loader, test_seen_loader, tes
     image_model = image_model.to(device)
     att_model = att_model.to(device)
     mod_model = mod_model.to(device)
+    mod_transformer = mod_transformer.to(device)
+    memory_fusion = memory_fusion.to(device)
     # Set up the optimizer
     image_trainables = [p for p in image_model.parameters() if p.requires_grad] # if p.requires_grad
     att_trainables = [p for p in att_model.parameters() if p.requires_grad]
@@ -85,6 +88,8 @@ def train(image_model, att_model, mod_model, train_loader, test_seen_loader, tes
     image_model.train()
     att_model.train()
     mod_model.train()
+    mod_transformer.train()
+    memory_fusion.train()
     criterion_hinge = nn.TripletMarginLoss(margin=1.0,p=2)
     criterion_e = nn.MSELoss()
     criterion_s = nn.CosineSimilarity()
@@ -115,6 +120,8 @@ def train(image_model, att_model, mod_model, train_loader, test_seen_loader, tes
         image_model.train()
         att_model.train()
         mod_model.train()
+        mod_transformer.train()
+        memory_fusion.train()
 
         for i, (image_input, att_input, cls_id, key, label) in enumerate(train_loader):
             
@@ -127,11 +134,35 @@ def train(image_model, att_model, mod_model, train_loader, test_seen_loader, tes
             optimizer.zero_grad()
             optimizer_img.zero_grad()
             optimizer_mod.zero_grad()
-           
+
+            final_image_output = None
+            final_att_output = None
+
+            # 输出图像特征向量和属性向量
             image_output = image_model(image_input)                            
             att_output = att_model(att_input)
-            modal_image_output = mod_model(image_output)
-            modal_att_output = mod_model(att_output)
+            # 通过 Modality Transformer 作转换
+            mt_image_output = mod_transformer(image_output)
+            mt_att_output = mod_transformer(att_output)
+            # Modality Classifier 分类
+            modal_image_output = mod_model(mt_image_output)
+            modal_att_output = mod_model(mt_att_output)
+            # Memory Fusion
+            memory_image_output = memory_fusion(mt_image_output)
+            memory_att_otuput = memory_fusion(mt_att_output)
+
+            if args.modules_used == 'memory_fusion':
+                final_image_output = memory_image_output
+                final_att_output = memory_att_otuput
+            elif args.modules_used == 'modal_classifier':
+                final_image_output = mt_image_output
+                final_att_output = mt_att_output
+            elif args.modules_used == 'unsed':
+                final_image_output = image_output
+                final_att_output = att_output
+            else:
+                raise ValueError('Error Method')
+
                 # print('--------------------------------------------------------------------')
                 # print('Best_zsl:', pre_acc)
                 # print('According_gzsl: seen=%.4f, unseen=%.4f, h=%.4f' % (pre_seen, pre_useen, pre_H))
@@ -162,14 +193,14 @@ def train(image_model, att_model, mod_model, train_loader, test_seen_loader, tes
             # loss_t = criterion(image_output,audio_output,neg_samples)
             loss = 0
             if args.Loss_cont:
-                loss = criterion_e(image_output,att_output) * args.gamma_cont
+                loss = criterion_e(final_image_output, final_att_output) * args.gamma_cont
             if args.Loss_batch:
-                lossb1,lossb2 = batch_loss(image_output,att_output,cls_id,args)
+                lossb1,lossb2 = batch_loss(final_image_output, final_att_output,cls_id,args)
                 loss_batch = lossb1 + lossb2
                 loss += loss_batch*args.gamma_batch        
             
             if args.Loss_dist:
-                loss_dist1, loss_dist2  = distribute_loss(image_output,att_output)
+                loss_dist1, loss_dist2  = distribute_loss(final_image_output, final_att_output)
                 loss_dist = loss_dist1 + loss_dist2
                 loss += loss_dist*args.gamma_dist            
             
@@ -206,7 +237,7 @@ def train(image_model, att_model, mod_model, train_loader, test_seen_loader, tes
                 temp = 1e-5
                 prob_image0 = modal_image_output[:,0]
                 prob_image1 = modal_att_output[:,0]
-                T_loss = -torch.mean(torch.log(1. - prob_image0 + temp) + torch.log(prob_image1 + temp))
+                T_loss = -torch.mean(torch.log(1 - prob_image0 + temp) + torch.log(prob_image1 + temp))
                 C_loss = -torch.mean(torch.log(prob_image0 + temp) + torch.log(1. - prob_image1 + temp))
                 Adv_loss = T_loss + C_loss
                 loss += Adv_loss * args.gamma_modal
@@ -231,9 +262,11 @@ def train(image_model, att_model, mod_model, train_loader, test_seen_loader, tes
             image_model.eval()
             att_model.eval()
             mod_model.eval()
-            acc_zsl = compute_accuracy(image_model, att_model, test_unseen_loader, test_att, test_id, args)
-            acc_seen_gzsl = compute_accuracy(image_model, att_model, test_seen_loader, all_att, all_id, args)
-            acc_unseen_gzsl = compute_accuracy(image_model, att_model, test_unseen_loader, all_att, all_id, args)
+            mod_transformer.eval()
+            memory_fusion.eval()
+            acc_zsl = compute_accuracy(image_model, att_model, mod_model, memory_fusion, test_unseen_loader, test_att, test_id, args)
+            acc_seen_gzsl = compute_accuracy(image_model, att_model, mod_model, memory_fusion, test_seen_loader, all_att, all_id, args)
+            acc_unseen_gzsl = compute_accuracy(image_model, att_model, mod_model, memory_fusion, test_unseen_loader, all_att, all_id, args)
             H = 2 * acc_seen_gzsl * acc_unseen_gzsl / (acc_seen_gzsl + acc_unseen_gzsl)
             if acc_zsl > pre_acc:
                 pre_acc = acc_zsl
@@ -244,7 +277,7 @@ def train(image_model, att_model, mod_model, train_loader, test_seen_loader, tes
             print('epoch: %d | itr: %d | zsl: ACC=%.4f | gzsl: seen=%.4f, unseen=%.4f, h=%.4f' % (epoch, i, acc_zsl, acc_seen_gzsl, acc_unseen_gzsl, H))
                 
 
-def compute_accuracy(image_model, att_model, test_loader, test_att, test_id, args):
+def compute_accuracy(image_model, att_model, mod_model, memory_fusion, test_loader, test_att, test_id, args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     outpred = []
     test_label = []
@@ -252,6 +285,15 @@ def compute_accuracy(image_model, att_model, test_loader, test_att, test_id, arg
     test_att = torch.from_numpy(test_att)
     test_att = test_att.float().to(device)
     test_att_output = att_model(test_att)
+    if args.modules_used == 'memory_fusion':
+        test_att_output = memory_fusion(mod_model(test_att_output))
+    elif args.modules_used == 'modal_classifier':
+        test_att_output = mod_model(test_att_output)
+    elif args.modules_used == 'unsed':
+        pass
+    else:
+        raise ValueError('Error Method')
+
     test_att_output = test_att_output / test_att_output.norm(dim=1,keepdim=True)
     
     for i, (image_input, att_input, cls_id, key, label) in enumerate(test_loader):
@@ -259,11 +301,22 @@ def compute_accuracy(image_model, att_model, test_loader, test_att, test_id, arg
         label = list(label.numpy())
         
         image_input = image_input.float().to(device)
-        image_input = image_input.squeeze(1) 
-        image_output = image_model(image_input)  
-        image_output = image_output / image_output.norm(dim=1,keepdim=True)
-        
-        att_output = att_model(att_input)
+        image_input = image_input.squeeze(1)
+
+        if args.modules_used == 'memory_fusion':
+            image_output = memory_fusion(mod_model(image_model(image_input)))
+            att_output = memory_fusion(mod_model(att_model(att_input)))
+        elif args.modules_used == 'modal_classifier':
+            image_output = mod_model(image_model(image_input))
+            att_output = mod_model(att_model(att_input))
+        elif args.modules_used == 'unsed':
+            iamge_output = image_model(image_input)
+            att_output = att_model(att_input)
+        else:
+            raise ValueError('Error Method')
+
+
+        image_output = image_output / image_output.norm(dim=1, keepdim=True)
         att_output = att_output / att_output.norm(dim=1,keepdim=True)
         
         for j in range(len(label)):

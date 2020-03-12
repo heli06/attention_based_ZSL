@@ -11,7 +11,8 @@ import dateutil.tz
 import numpy as np
 from PIL import Image
 from dataloaders.dataset import ZSLDataset
-from models import ImageModels, AttModels, ImageModels2, ModalityClassifier
+from models import ImageModels, AttModels, ImageModels2
+from models import ModalityClassifier, ModalityTransformer, Memory
 from steps import train
 import torchvision.transforms as transforms 
 import scipy.io as sio
@@ -53,6 +54,7 @@ parser.add_argument('--img_size',type=int,default = 244,help='image size')
 
 parser.add_argument('--att_DIM',type=int,default = 312)
 parser.add_argument('--att_hidDIM',type=int,default = 1600)
+parser.add_argument('--out_DIM',type=int,default = 2048)
 
 parser.add_argument('--Loss_cont',default = False)
 parser.add_argument('--gamma_cont',default = 1.0)
@@ -77,6 +79,15 @@ parser.add_argument('--all_class_attr',default = 'class_attribute_labels_continu
 parser.add_argument('--train_set_len', type=int, default = 7051)
 parser.add_argument('--test_seen_set_len', type=int, default = 1770)
 parser.add_argument('--test_set_len', type=int, default = 2967)
+
+# 启用的模块
+# memory_fusion
+# modal_classifier
+# unused
+parser.add_argument('--modules_used',default = 'memory_fusion')
+
+# Memory Fusion 相关参数
+parser.add_argument('--num_gst', type=int, default = 128)
 
 args = parser.parse_args()
 
@@ -135,6 +146,8 @@ image_model = ImageModels.Resnet101()
 # image_model = ImageModels2.Resnet101()
 att_model = AttModels.AttEncoder(args)
 mod_model = ModalityClassifier.ModalityClassifier(args)
+mod_transformer = ModalityTransformer.ModalityTransformer(args)
+memory_funsion = Memory.MemoryFusion(args)
 
-train(image_model, att_model, mod_model, train_loader, test_seen_loader, test_unseen_loader, args)
+train(image_model, att_model, mod_model, mod_transformer, memory_funsion, train_loader, test_seen_loader, test_unseen_loader, args)
     

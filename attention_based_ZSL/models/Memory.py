@@ -1,54 +1,80 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.autograd import Variable
 import torchvision.models as imagemodels
 import torch.utils.model_zoo as model_zoo
 from torchvision import models
 import copy
 import math
+import numpy as np
 
-def clones(module, N):
-    '''
-    产生 N 个独立的层
-    '''
-    return nn.ModuleList([copy.deepcopy(module) for _ in range(N)])
-
-def attention(query, key, value, dropout=None):
-    '''
-    缩放后的点乘注意力
-    '''
-    d_k = query.size(-1)
-    scores = torch.matmul(query,key.transpose(-2,-1))/math.sqrt(d_k)
-    p_attn = F.softmax(scores, dim = -1)
-    if dropout is not None:
-        p_attn = dropout(p_attn)
-    return torch.matmul(p_attn, value), p_attn
-
-class MultiHeadedAttention(nn.Module):
-    def __init__(self, num_heads=4, attention_type='mlp_attention',
-                num_units=None, normalize=True, args):
+class MultiHeadAttention(nn.Module):
+    def __init__(self, args):
         '''
         接收模型size和注意力头的数量
         '''
-        super(MultiHeadedAttention, self).__init__()
-        self.num_heads = num_heads
-        self.attention_type = attention_type
-        self.num_units = num_units
-        self.normalize = normalize
-        self.conv1d = nn.Conv1d(args.num_gst, args.num_gst, 2048)
+        super(MultiHeadAttention, self).__init__()
+        self.num_heads = args.num_heads
+        self.attention_type = args.attention_type
+        self.num_units = args.out_DIM,
+        self.normalize = args.normalize
+
+        self.conv1d = nn.Conv1d(args.out_DIM // args.num_heads, args.out_DIM, 1)
+        self.qsLinear = nn.Linear(args.out_DIM // args.num_heads, self.num_units)
+        self.ksLinear = nn.Linear(args.out_DIM // args.num_heads, self.num_units)
+        self.vsLinear = nn.Linear(args.out_DIM // args.num_heads, self.num_units)
+        self.addLinear = nn.Linear(args.out_DIM // args.num_heads, self.num_units)
 
     def forward(self, query, value):
         if self.num_units % self.num_heads != 0:
-            raise ValueError('ERROR')
+            raise ValueError('Multi head attention requires that num_units '
+                             'is a multiple of num_heads')
 
         q = query
-        k = self.conv1d(value)
+        k = self.conv1d(value.permute(0, 2, 1)).permute(0, 2, 1)
         v = value
         qs, ks, vs = self._split_heads(q, k, v)
         if self.attention_type == 'mlp_attention':
             style_embeddings = self._mlp_attention(qs, ks, vs)
-
+        elif self.attention_type == 'dot_attention':
+            style_embeddings = self._dot_product(qs, ks, vs)
+        else:
+            raise ValueError('ERROR')
         return self._combine_heads(style_embeddings)
+
+    def _dot_product(self, qs, ks, vs):
+        qk = torch.matmul(qs, ks.permute(0,1,3,2))
+        scale_factor = (self.num_units // self.num_heads) ** -0.5
+        if self.normalize:
+            qk *= scale_factor
+        weights = F.softmax(qk)
+        context = torch.matmul(weights, vs)
+        return context
+
+    def _mlp_attention(self, qs, ks, vs):
+        num_units = qs.size()[-1]
+        dtype = qs.dtype
+
+        qs = self.qsLinear(qs)
+        ks = self.ksLinear(ks)
+        vs = self.vsLinear(vs)
+
+        v = Variable(torch.randn(num_units))
+        if self.normalize:
+            g = Variable(torch.FloatTensor(math.sqrt(1. / num_units)))
+            b = Variable(torch.zeros(num_units))
+            normed_v = g * v * torch.rsqrt(torch.sum(torch.from_numpy(
+                np.square(v.data.numpy()))))
+
+            add = torch.sum(normed_v * F.tanh(ks + qs + b), -1, keepdim=True)
+        else:
+            add = torch.sum(v * F.tanh(ks + qs), -1, keepdim=True)
+
+        add = self.addLinear(add)
+        weights = F.softmax(add.permute(0, 1, 3, 2))
+        context = torch.matmul(weights, vs)
+        return context
 
     def _split_heads(self, q, k, v):
         qs = self._split_last_dimension(q, self.num_heads).permute(0, 2, 1, 3)
@@ -63,15 +89,20 @@ class MultiHeadedAttention(nn.Module):
         assert dim % num_heads == 0
         return x.reshape(x_shape[:-1] + [num_heads, dim // num_heads])
 
+    def _combine_heads(self, x):
+        x = x.permute(0, 2, 1, 3)
+        x_shape = x.size()
+        return x.reshape(x_shape[:-2] + [self.num_heads * x_shape[-1]])
+
 class MemoryFusion(nn.Module):
     def __init__(self, args):
         super(MemoryFusion, self).__init__()
-        self.tokens = torch.normal(mean=0., std=0.5, size=(
-            args.num_gst, args.style_embed_depth // args.num_heads))
-        self.image_attn = MultiHeadedAttention(
-            args.num_heads, args.style_attn_dim, args.style_att_type)
-        self.attr_attn = MultiHeadedAttention(
-            args.num_heads, args.style_attn_dim, args.style_att_type)
+        # num_gst 基向量的个数
+        # out_DIM // args.num_heads 基向量的维度
+        self.tokens =  Variable(torch.normal(mean=0., std=0.5, size=(
+            args.num_gst, args.out_DIM // args.num_heads)), requires_grad=True)
+        self.image_attn = MultiHeadAttention(args)
+        self.attr_attn = MultiHeadAttention(args)
 
     def forward(self, z_image, z_attr, key, value):
         batch_size = z_image.size()[0]
@@ -79,3 +110,4 @@ class MemoryFusion(nn.Module):
             z_image.unsqueeze(1), self.tokens.repeat(batch_size, 1, 1))
         output_attr = self.attr_attn(
             z_attr.unsqueeze(1), self.tokens.repeat(batch_size, 1, 1))
+        return output_image, output_attr

@@ -8,7 +8,7 @@ from torchvision import models
 class ModalityClassifier(nn.Module):
     def __init__(self, args):
         super(ModalityClassifier, self).__init__()
-        self.fc1 = nn.Linear(2048, 512)
+        self.fc1 = nn.Linear(args.out_DIM, 512)
         self.fc2 = nn.Linear(512, 64)
         self.fc3 = nn.Linear(64, 2)
         nn.init.xavier_uniform(self.fc1.weight.data)
