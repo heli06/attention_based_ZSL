@@ -12,7 +12,7 @@ import numpy as np
 from PIL import Image
 from dataloaders.dataset import ZSLDataset
 from models import ImageModels, AttModels, ImageModels2
-from models import ModalityClassifier, ModalityTransformer, Memory
+from models import ModalityClassifier, ModalityTransformer, Attention
 from steps import train
 import torchvision.transforms as transforms 
 import scipy.io as sio
@@ -39,6 +39,12 @@ parser.add_argument('--lr_I', '--learning-rate-image', default=0.001, type=float
     metavar='LR', help='initial learning rate')
 parser.add_argument('--lr_M', '--learning-rate-modal', default=0.001, type=float,
     metavar='LR', help='initial learning rate')
+parser.add_argument('--lr_MT', '--learning-rate-modal-trans', default=0.001, type=float,
+    metavar='LR', help='initial learning rate')
+parser.add_argument('--lr_AI', '--learning-rate-attn-img', default=0.001, type=float,
+    metavar='LR', help='initial learning rate')
+parser.add_argument('--lr_AA', '--learning-rate-attn-att', default=0.001, type=float,
+    metavar='LR', help='initial learning rate')
 parser.add_argument('--lr-decay', default=100, type=int, metavar='LRDECAY',
     help='Divide the learning rate by 10 every lr_decay epochs')
 parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
@@ -52,9 +58,9 @@ parser.add_argument('--gpu_id',type = int, default= 0)
 parser.add_argument('--manualSeed',type=int,default= 200, help='manual seed')
 parser.add_argument('--img_size',type=int,default = 244,help='image size')
 
-parser.add_argument('--att_DIM',type=int,default = 312)
-parser.add_argument('--att_hidDIM',type=int,default = 1600)
-parser.add_argument('--out_DIM',type=int,default = 2048)
+parser.add_argument('--att_DIM',type=int, default = 312)
+parser.add_argument('--att_hidDIM',type=int, default = 1600)
+parser.add_argument('--out_DIM',type=int, default = 2048)
 
 parser.add_argument('--Loss_cont',default = False)
 parser.add_argument('--gamma_cont',default = 1.0)
@@ -84,10 +90,13 @@ parser.add_argument('--test_set_len', type=int, default = 2967)
 # memory_fusion
 # modal_classifier
 # unused
-parser.add_argument('--modules_used',default = 'memory_fusion')
+parser.add_argument('--modules_used', default = 'memory_fusion')
 
 # Memory Fusion 相关参数
 parser.add_argument('--num_gst', type=int, default = 128)
+parser.add_argument('--attention_type', default='dot_attention')
+parser.add_argument('--num_heads', type=int, default=4)
+parser.add_argument('--normalize', default=False)
 
 args = parser.parse_args()
 
@@ -147,7 +156,8 @@ image_model = ImageModels.Resnet101()
 att_model = AttModels.AttEncoder(args)
 mod_model = ModalityClassifier.ModalityClassifier(args)
 mod_transformer = ModalityTransformer.ModalityTransformer(args)
-memory_funsion = Memory.MemoryFusion(args)
+attn_img = Attention.MultiHeadAttention(args)
+attn_att = Attention.MultiHeadAttention(args)
 
-train(image_model, att_model, mod_model, mod_transformer, memory_funsion, train_loader, test_seen_loader, test_unseen_loader, args)
-    
+train(image_model, att_model, mod_model, mod_transformer, attn_img, attn_att,
+      train_loader, test_seen_loader, test_unseen_loader, args)

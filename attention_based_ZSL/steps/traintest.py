@@ -9,7 +9,7 @@ from .kNN import kNNClassify
 from .util import *
 from sklearn.metrics import accuracy_score
 
-def train(image_model, att_model, mod_model, mod_transformer, memory_fusion,
+def train(image_model, att_model, mod_model, mod_transformer, attn_img, attn_att,
           train_loader, test_seen_loader, test_unseen_loader, args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.set_grad_enabled(True)
@@ -37,18 +37,25 @@ def train(image_model, att_model, mod_model, mod_transformer, memory_fusion,
         image_model.load_state_dict(torch.load("%s/models/image_model.%d.pth" % (exp_dir, epoch)))
         att_model.load_state_dict(torch.load("%s/models/att_model.%d.pth" % (exp_dir, epoch)))        
         print("loaded parameters from epoch %d" % epoch)
+
+    # Memory
+    memory = Variable(torch.normal(mean=0., std=0.5, size=(
+        args.num_gst, args.out_DIM // args.num_heads)), requires_grad=True).to(device)
     
     image_model = image_model.to(device)
     att_model = att_model.to(device)
     mod_model = mod_model.to(device)
     mod_transformer = mod_transformer.to(device)
-    memory_fusion = memory_fusion.to(device)
+    attn_img = attn_img.to(device)
+    attn_att = attn_att.to(device)
     # Set up the optimizer
     image_trainables = [p for p in image_model.parameters() if p.requires_grad] # if p.requires_grad
     att_trainables = [p for p in att_model.parameters() if p.requires_grad]
     mod_trainables = [p for p in mod_model.parameters() if p.requires_grad]
-    
-    
+    mod_trans_trainables = [p for p in mod_transformer.parameters() if p.requires_grad]
+    attn_img_trainables = [p for p in attn_img.parameters() if p.requires_grad]
+    attn_att_trainables = [p for p in attn_att.parameters() if p.requires_grad]
+
     if args.optim == 'sgd':
         optimizer = torch.optim.SGD(att_trainables, args.lr_A,
                                     momentum=args.momentum,
@@ -59,6 +66,15 @@ def train(image_model, att_model, mod_model, mod_transformer, memory_fusion,
         optimizer_mod = torch.optim.SGD(mod_trainables, args.lr_M,
                                     momentum=args.momentum,
                                     weight_decay=args.weight_decay)
+        optimizer_mod_trans = torch.optim.SGD(mod_trans_trainables, args.lr_MT,
+                                        momentum=args.momentum,
+                                        weight_decay=args.weight_decay)
+        optimizer_attn_img = torch.optim.SGD(attn_img_trainables, args.lr_AI,
+                                        momentum=args.momentum,
+                                        weight_decay=args.weight_decay)
+        optimizer_attn_att = torch.optim.SGD(attn_att_trainables, args.lr_AA,
+                                        momentum=args.momentum,
+                                        weight_decay=args.weight_decay)
     elif args.optim == 'adam':
         optimizer = torch.optim.Adam(att_trainables, args.lr_A,
                                     weight_decay=args.weight_decay,
@@ -69,6 +85,15 @@ def train(image_model, att_model, mod_model, mod_transformer, memory_fusion,
         optimizer_mod = torch.optim.Adam(mod_trainables, args.lr_M,
                                     weight_decay=args.weight_decay,
                                     betas=(0.95, 0.999))
+        optimizer_mod_trans = torch.optim.Adam(mod_trans_trainables, args.lr_MT,
+                                         weight_decay=args.weight_decay,
+                                         betas=(0.95, 0.999))
+        optimizer_attn_img = torch.optim.Adam(attn_img_trainables, args.lr_AI,
+                                         weight_decay=args.weight_decay,
+                                         betas=(0.95, 0.999))
+        optimizer_attn_att = torch.optim.Adam(attn_att_trainables, args.lr_AA,
+                                         weight_decay=args.weight_decay,
+                                         betas=(0.95, 0.999))
     else:
         raise ValueError('Optimizer %s is not supported' % args.optim)
     
@@ -89,7 +114,8 @@ def train(image_model, att_model, mod_model, mod_transformer, memory_fusion,
     att_model.train()
     mod_model.train()
     mod_transformer.train()
-    memory_fusion.train()
+    attn_img.train()
+    attn_att.train()
     criterion_hinge = nn.TripletMarginLoss(margin=1.0,p=2)
     criterion_e = nn.MSELoss()
     criterion_s = nn.CosineSimilarity()
@@ -116,12 +142,16 @@ def train(image_model, att_model, mod_model, mod_transformer, memory_fusion,
         adjust_learning_rate(args.lr_A, args.lr_decay, optimizer, epoch)
         adjust_learning_rate(args.lr_I, args.lr_decay, optimizer_img, epoch)
         adjust_learning_rate(args.lr_M, args.lr_decay, optimizer_mod, epoch)
+        adjust_learning_rate(args.lr_MT, args.lr_decay, optimizer_mod_trans, epoch)
+        adjust_learning_rate(args.lr_AI, args.lr_decay, optimizer_attn_img, epoch)
+        adjust_learning_rate(args.lr_AA, args.lr_decay, optimizer_attn_att, epoch)
         end_time = time.time()
         image_model.train()
         att_model.train()
         mod_model.train()
         mod_transformer.train()
-        memory_fusion.train()
+        attn_img.train()
+        attn_att.train()
 
         for i, (image_input, att_input, cls_id, key, label) in enumerate(train_loader):
             
@@ -134,6 +164,9 @@ def train(image_model, att_model, mod_model, mod_transformer, memory_fusion,
             optimizer.zero_grad()
             optimizer_img.zero_grad()
             optimizer_mod.zero_grad()
+            optimizer_mod_trans.zero_grad()
+            optimizer_attn_img.zero_grad()
+            optimizer_attn_att.zero_grad()
 
             final_image_output = None
             final_att_output = None
@@ -148,8 +181,10 @@ def train(image_model, att_model, mod_model, mod_transformer, memory_fusion,
             modal_image_output = mod_model(mt_image_output)
             modal_att_output = mod_model(mt_att_output)
             # Memory Fusion
-            memory_image_output = memory_fusion(mt_image_output)
-            memory_att_otuput = memory_fusion(mt_att_output)
+            memory_image_output = attn_img(
+                mt_image_output.unsqueeze(1), memory.repeat(args.batch_size, 1, 1))
+            memory_att_otuput = attn_att(
+                mt_att_output.unsqueeze(1), memory.repeat(args.batch_size, 1, 1))
 
             if args.modules_used == 'memory_fusion':
                 final_image_output = memory_image_output
@@ -167,7 +202,7 @@ def train(image_model, att_model, mod_model, mod_transformer, memory_fusion,
                 # print('Best_zsl:', pre_acc)
                 # print('According_gzsl: seen=%.4f, unseen=%.4f, h=%.4f' % (pre_seen, pre_useen, pre_H))
                 
-             
+
             #print(image_input.size())
             #print(att_input.size())
             #print(image_output.size())
@@ -246,6 +281,9 @@ def train(image_model, att_model, mod_model, mod_transformer, memory_fusion,
             optimizer.step()
             optimizer_img.step()
             optimizer_mod.step()
+            optimizer_mod_trans.step()
+            optimizer_attn_img.step()
+            optimizer_attn_att.step()
             
             # record loss
             loss_meter.update(loss.item(), B)
@@ -263,10 +301,14 @@ def train(image_model, att_model, mod_model, mod_transformer, memory_fusion,
             att_model.eval()
             mod_model.eval()
             mod_transformer.eval()
-            memory_fusion.eval()
-            acc_zsl = compute_accuracy(image_model, att_model, mod_model, memory_fusion, test_unseen_loader, test_att, test_id, args)
-            acc_seen_gzsl = compute_accuracy(image_model, att_model, mod_model, memory_fusion, test_seen_loader, all_att, all_id, args)
-            acc_unseen_gzsl = compute_accuracy(image_model, att_model, mod_model, memory_fusion, test_unseen_loader, all_att, all_id, args)
+            attn_img.eval()
+            attn_att.eval()
+            acc_zsl = compute_accuracy(image_model, att_model, mod_transformer, attn_img, attn_att, memory,
+                                       test_unseen_loader, test_att, test_id, args)
+            acc_seen_gzsl = compute_accuracy(image_model, att_model, mod_transformer, attn_img, attn_att, memory,
+                                             test_seen_loader, all_att, all_id, args)
+            acc_unseen_gzsl = compute_accuracy(image_model, att_model, mod_transformer, attn_img, attn_att, memory,
+                                               test_unseen_loader, all_att, all_id, args)
             H = 2 * acc_seen_gzsl * acc_unseen_gzsl / (acc_seen_gzsl + acc_unseen_gzsl)
             if acc_zsl > pre_acc:
                 pre_acc = acc_zsl
@@ -274,10 +316,11 @@ def train(image_model, att_model, mod_model, mod_transformer, memory_fusion,
                 pre_useen = acc_unseen_gzsl
                 pre_H = H
 
-            print('epoch: %d | itr: %d | zsl: ACC=%.4f | gzsl: seen=%.4f, unseen=%.4f, h=%.4f' % (epoch, i, acc_zsl, acc_seen_gzsl, acc_unseen_gzsl, H))
+            print('epoch: %d | itr: %d | zsl: ACC=%.4f | gzsl: seen=%.4f, unseen=%.4f, h=%.4f'
+                  % (epoch, i, acc_zsl, acc_seen_gzsl, acc_unseen_gzsl, H))
                 
 
-def compute_accuracy(image_model, att_model, mod_model, memory_fusion, test_loader, test_att, test_id, args):
+def compute_accuracy(image_model, att_model, mod_transformer, attn_img, attn_att, memory, test_loader, test_att, test_id, args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     outpred = []
     test_label = []
@@ -285,10 +328,11 @@ def compute_accuracy(image_model, att_model, mod_model, memory_fusion, test_load
     test_att = torch.from_numpy(test_att)
     test_att = test_att.float().to(device)
     test_att_output = att_model(test_att)
+    test_size = test_att_output.size()[0]
     if args.modules_used == 'memory_fusion':
-        test_att_output = memory_fusion(mod_model(test_att_output))
+        test_att_output = attn_att(mod_transformer(test_att_output).unsqueeze(1), memory.repeat(test_size, 1, 1))
     elif args.modules_used == 'modal_classifier':
-        test_att_output = mod_model(test_att_output)
+        test_att_output = mod_transformer(test_att_output)
     elif args.modules_used == 'unsed':
         pass
     else:
@@ -304,13 +348,14 @@ def compute_accuracy(image_model, att_model, mod_model, memory_fusion, test_load
         image_input = image_input.squeeze(1)
 
         if args.modules_used == 'memory_fusion':
-            image_output = memory_fusion(mod_model(image_model(image_input)))
-            att_output = memory_fusion(mod_model(att_model(att_input)))
+            batch_size = image_input.size()[0]
+            image_output = attn_img(mod_transformer(image_model(image_input)).unsqueeze(1), memory.repeat(batch_size, 1, 1))
+            att_output = attn_att(mod_transformer(att_model(att_input)).unsqueeze(1), memory.repeat(batch_size, 1, 1))
         elif args.modules_used == 'modal_classifier':
-            image_output = mod_model(image_model(image_input))
-            att_output = mod_model(att_model(att_input))
+            image_output = mod_transformer(image_model(image_input))
+            att_output = mod_transformer(att_model(att_input))
         elif args.modules_used == 'unsed':
-            iamge_output = image_model(image_input)
+            image_output = image_model(image_input)
             att_output = att_model(att_input)
         else:
             raise ValueError('Error Method')

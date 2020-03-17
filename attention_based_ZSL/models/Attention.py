@@ -17,7 +17,7 @@ class MultiHeadAttention(nn.Module):
         super(MultiHeadAttention, self).__init__()
         self.num_heads = args.num_heads
         self.attention_type = args.attention_type
-        self.num_units = args.out_DIM,
+        self.num_units = args.out_DIM
         self.normalize = args.normalize
 
         self.conv1d = nn.Conv1d(args.out_DIM // args.num_heads, args.out_DIM, 1)
@@ -87,27 +87,9 @@ class MultiHeadAttention(nn.Module):
         x_shape = x.size()
         dim = x_shape[-1]
         assert dim % num_heads == 0
-        return x.reshape(x_shape[:-1] + [num_heads, dim // num_heads])
+        return x.reshape(list(x_shape[:-1]) + [num_heads, dim // num_heads])
 
     def _combine_heads(self, x):
         x = x.permute(0, 2, 1, 3)
         x_shape = x.size()
-        return x.reshape(x_shape[:-2] + [self.num_heads * x_shape[-1]])
-
-class MemoryFusion(nn.Module):
-    def __init__(self, args):
-        super(MemoryFusion, self).__init__()
-        # num_gst 基向量的个数
-        # out_DIM // args.num_heads 基向量的维度
-        self.tokens =  Variable(torch.normal(mean=0., std=0.5, size=(
-            args.num_gst, args.out_DIM // args.num_heads)), requires_grad=True)
-        self.image_attn = MultiHeadAttention(args)
-        self.attr_attn = MultiHeadAttention(args)
-
-    def forward(self, z_image, z_attr, key, value):
-        batch_size = z_image.size()[0]
-        output_image = self.image_attn(
-            z_image.unsqueeze(1), self.tokens.repeat(batch_size, 1, 1))
-        output_attr = self.attr_attn(
-            z_attr.unsqueeze(1), self.tokens.repeat(batch_size, 1, 1))
-        return output_image, output_attr
+        return x.reshape(list(x_shape[:-3]) + [self.num_heads * x_shape[-1]])
