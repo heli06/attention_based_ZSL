@@ -9,8 +9,7 @@ from .kNN import kNNClassify
 from .util import *
 from sklearn.metrics import accuracy_score
 
-def train(image_model, att_model, mod_model, mod_transformer, attn_img, attn_att, decoder_img, decoder_att,
-          train_loader, test_seen_loader, test_unseen_loader, args):
+def train2(image_model, att_model, relation_net, train_loader, test_seen_loader, test_unseen_loader, args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.set_grad_enabled(True)
     # Initialize all of the statistics we want to keep track of
@@ -35,7 +34,7 @@ def train(image_model, att_model, mod_model, mod_transformer, attn_img, attn_att
     
     if epoch != 0:        
         image_model.load_state_dict(torch.load("%s/models/image_model.%d.pth" % (exp_dir, epoch)))
-        att_model.load_state_dict(torch.load("%s/models/att_model.%d.pth" % (exp_dir, epoch)))        
+        att_model.load_state_dict(torch.load("%s/models/att_model.%d.pth" % (exp_dir, epoch)))
         print("loaded parameters from epoch %d" % epoch)
 
     # Memory
@@ -44,21 +43,9 @@ def train(image_model, att_model, mod_model, mod_transformer, attn_img, attn_att
     
     image_model = image_model.to(device)
     att_model = att_model.to(device)
-    mod_model = mod_model.to(device)
-    mod_transformer = mod_transformer.to(device)
-    attn_img = attn_img.to(device)
-    attn_att = attn_att.to(device)
-    decoder_img = decoder_img.to(device)
-    decoder_att = decoder_att.to(device)
     # Set up the optimizer
     image_trainables = [p for p in image_model.parameters() if p.requires_grad] # if p.requires_grad
     att_trainables = [p for p in att_model.parameters() if p.requires_grad]
-    mod_trainables = [p for p in mod_model.parameters() if p.requires_grad]
-    mod_trans_trainables = [p for p in mod_transformer.parameters() if p.requires_grad]
-    attn_img_trainables = [p for p in attn_img.parameters() if p.requires_grad]
-    attn_att_trainables = [p for p in attn_att.parameters() if p.requires_grad]
-    recon_img_trainables = [p for p in attn_att.parameters() if p.requires_grad]
-    recon_att_trainables = [p for p in attn_att.parameters() if p.requires_grad]
 
     if args.optim == 'sgd':
         optimizer = torch.optim.SGD(att_trainables, args.lr_A,
@@ -67,24 +54,6 @@ def train(image_model, att_model, mod_model, mod_transformer, attn_img, attn_att
         optimizer_img = torch.optim.SGD(image_trainables, args.lr_I,
                                     momentum=args.momentum,
                                     weight_decay=args.weight_decay)
-        optimizer_mod = torch.optim.SGD(mod_trainables, args.lr_M,
-                                    momentum=args.momentum,
-                                    weight_decay=args.weight_decay)
-        optimizer_mod_trans = torch.optim.SGD(mod_trans_trainables, args.lr_MT,
-                                        momentum=args.momentum,
-                                        weight_decay=args.weight_decay)
-        optimizer_attn_img = torch.optim.SGD(attn_img_trainables, args.lr_AI,
-                                        momentum=args.momentum,
-                                        weight_decay=args.weight_decay)
-        optimizer_attn_att = torch.optim.SGD(attn_att_trainables, args.lr_AA,
-                                        momentum=args.momentum,
-                                        weight_decay=args.weight_decay)
-        optimizer_recon_img = torch.optim.SGD(recon_img_trainables, args.lr_AA,
-                                             momentum=args.momentum,
-                                             weight_decay=args.weight_decay)
-        optimizer_recon_att = torch.optim.SGD(recon_att_trainables, args.lr_AA,
-                                             momentum=args.momentum,
-                                             weight_decay=args.weight_decay)
 
     elif args.optim == 'adam':
         optimizer = torch.optim.Adam(att_trainables, args.lr_A,
@@ -93,24 +62,6 @@ def train(image_model, att_model, mod_model, mod_transformer, attn_img, attn_att
         optimizer_img = torch.optim.Adam(image_trainables, args.lr_I,
                                     weight_decay=args.weight_decay,
                                     betas=(0.95, 0.999))
-        optimizer_mod = torch.optim.Adam(mod_trainables, args.lr_M,
-                                    weight_decay=args.weight_decay,
-                                    betas=(0.95, 0.999))
-        optimizer_mod_trans = torch.optim.Adam(mod_trans_trainables, args.lr_MT,
-                                         weight_decay=args.weight_decay,
-                                         betas=(0.95, 0.999))
-        optimizer_attn_img = torch.optim.Adam(attn_img_trainables, args.lr_AI,
-                                         weight_decay=args.weight_decay,
-                                         betas=(0.95, 0.999))
-        optimizer_attn_att = torch.optim.Adam(attn_att_trainables, args.lr_AA,
-                                         weight_decay=args.weight_decay,
-                                         betas=(0.95, 0.999))
-        optimizer_recon_img = torch.optim.Adam(recon_img_trainables, args.lr_RI,
-                                              weight_decay=args.weight_decay,
-                                              betas=(0.95, 0.999))
-        optimizer_recon_att = torch.optim.Adam(recon_att_trainables, args.lr_RA,
-                                              weight_decay=args.weight_decay,
-                                              betas=(0.95, 0.999))
     else:
         raise ValueError('Optimizer %s is not supported' % args.optim)
     
@@ -129,12 +80,6 @@ def train(image_model, att_model, mod_model, mod_transformer, attn_img, attn_att
     print("start training...")
     image_model.train()
     att_model.train()
-    mod_model.train()
-    mod_transformer.train()
-    attn_img.train()
-    attn_att.train()
-    decoder_img.train()
-    decoder_att.train()
     criterion_hinge = nn.TripletMarginLoss(margin=1.0,p=2)
     criterion_e = nn.MSELoss()
     criterion_s = nn.CosineSimilarity()
@@ -161,21 +106,9 @@ def train(image_model, att_model, mod_model, mod_transformer, attn_img, attn_att
         epoch += 1
         adjust_learning_rate(args.lr_A, args.lr_decay, optimizer, epoch)
         adjust_learning_rate(args.lr_I, args.lr_decay, optimizer_img, epoch)
-        adjust_learning_rate(args.lr_M, args.lr_decay, optimizer_mod, epoch)
-        adjust_learning_rate(args.lr_MT, args.lr_decay, optimizer_mod_trans, epoch)
-        adjust_learning_rate(args.lr_AI, args.lr_decay, optimizer_attn_img, epoch)
-        adjust_learning_rate(args.lr_AA, args.lr_decay, optimizer_attn_att, epoch)
-        adjust_learning_rate(args.lr_RI, args.lr_decay, optimizer_recon_img, epoch)
-        adjust_learning_rate(args.lr_RA, args.lr_decay, optimizer_recon_att, epoch)
         end_time = time.time()
         image_model.train()
         att_model.train()
-        mod_model.train()
-        mod_transformer.train()
-        attn_img.train()
-        attn_att.train()
-        decoder_img.train()
-        decoder_att.train()
 
         for i, (image_input, att_input, cls_id, key, label) in enumerate(train_loader):
             
@@ -187,12 +120,6 @@ def train(image_model, att_model, mod_model, mod_transformer, attn_img, attn_att
     
             optimizer.zero_grad()
             optimizer_img.zero_grad()
-            optimizer_mod.zero_grad()
-            optimizer_mod_trans.zero_grad()
-            optimizer_attn_img.zero_grad()
-            optimizer_attn_att.zero_grad()
-            optimizer_recon_img.zero_grad()
-            optimizer_recon_att.zero_grad()
 
             final_image_output = None
             final_att_output = None
@@ -200,35 +127,6 @@ def train(image_model, att_model, mod_model, mod_transformer, attn_img, attn_att
             # 输出图像特征向量和属性向量
             image_output = image_model(image_input)                            
             att_output = att_model(att_input)
-            # 通过 Modality Transformer 作转换
-            mt_image_output = mod_transformer(image_output)
-            mt_att_output = mod_transformer(att_output)
-            # Modality Classifier 分类
-            modal_image_output = mod_model(image_output)
-            modal_att_output = mod_model(att_output)
-            # modal_image_output = mod_model(mt_image_output)
-            # modal_att_output = mod_model(mt_att_output)
-            # Memory Fusion
-            memory_image_output = attn_img(
-                image_output.unsqueeze(1), memory.repeat(args.batch_size, 1, 1))
-            memory_att_otuput = attn_att(
-                att_output.unsqueeze(1), memory.repeat(args.batch_size, 1, 1))
-            # memory_image_output = attn_img(
-            #     mt_image_output.unsqueeze(1), memory.repeat(args.batch_size, 1, 1))
-            # memory_att_otuput = attn_att(
-            #     mt_att_output.unsqueeze(1), memory.repeat(args.batch_size, 1, 1))
-
-            if args.modules_used == 'memory_fusion':
-                final_image_output = memory_image_output
-                final_att_output = memory_att_otuput
-            elif args.modules_used == 'modal_classifier':
-                final_image_output = mt_image_output
-                final_att_output = mt_att_output
-            elif args.modules_used == 'unused' or args.modules_used == 'classifier_only':
-                final_image_output = image_output
-                final_att_output = att_output
-            else:
-                raise ValueError('Error Method')
 
                 # print('--------------------------------------------------------------------')
                 # print('Best_zsl:', pre_acc)
@@ -280,61 +178,18 @@ def train(image_model, att_model, mod_model, mod_transformer, attn_img, attn_att
                 hinge_loss = hinge_AII + hinge_IAA
                 loss += hinge_loss*args.gamma_hinge
 
-            Adv_loss = 0
-            if args.Loss_modal:
-                # 第一种写法，跑过一次准确率反而降低了
-                # y0 = np.zeros((args.batch_size,), dtype=np.int)
-                # y0 = torch.from_numpy(y0).to(device)
-                # y1 = np.ones((args.batch_size,), dtype=np.int)
-                # y1 = torch.from_numpy(y1).to(device)
-
-                # modal_image_loss = criterion_c(modal_image_output, y0)
-                # modal_att_loss = criterion_c(modal_att_output, y1)
-                # modal_loss = (modal_image_loss + modal_att_loss) * args.gamma_modal
-                # # 这里类似G的角色，试图让D无法区分，尝试让modal_loss增大，所以是负号
-                # loss -= modal_loss
-
-                # 这里是C
-                # modal_loss.backward(retain_graph=True)  # reusing computational graph
-                # optimizer_mod.step()
-
-                #  试试第二种写法
-                # 以下为假定
-                # prob_image0输出的是判断由图像特征向量转换而来的向量之前是来自图片的概率
-                # prob_image1输出的是判断由属性向量转换而来的向量之前是来自图片的概率
-                temp = 1e-5
-                prob_image0 = modal_image_output[:,0]
-                prob_image1 = modal_att_output[:,0]
-                T_loss = -torch.mean(torch.log(1 - prob_image0 + temp) + torch.log(prob_image1 + temp))
-                C_loss = -torch.mean(torch.log(prob_image0 + temp) + torch.log(1. - prob_image1 + temp))
-                Adv_loss = T_loss + C_loss
-                loss += Adv_loss * args.gamma_modal
-
-            recon_loss = 0
-            if args.Loss_recon:
-                code_img = decoder_img(final_image_output)
-                code_att = decoder_att(final_att_output)
-                recon_loss = criterion_m(code_img, image_output)/45 + criterion_m(code_att, att_input)/17
-                loss += recon_loss * args.gamma_recon
-
 
             loss.backward()
             optimizer.step()
             optimizer_img.step()
-            optimizer_mod.step()
-            optimizer_mod_trans.step()
-            optimizer_attn_img.step()
-            optimizer_attn_att.step()
-            optimizer_recon_img.step()
-            optimizer_recon_att.step()
             
             # record loss
             loss_meter.update(loss.item(), B)
             batch_time.update(time.time() - end_time)
             
             if i % 5 == 0:
-                print('epoch: %d | iteration = %d | loss = %f | Adv_loss = %f | Recon_loss = %f'
-                      %(epoch, i, loss, Adv_loss, recon_loss))
+                print('epoch: %d | iteration = %d | loss = %f'
+                      %(epoch, i, loss))
                 
         if epoch % 2 == 0:
             # train: (8821,)
@@ -343,17 +198,11 @@ def train(image_model, att_model, mod_model, mod_transformer, attn_img, attn_att
             # test_unseen: (2967,)
             image_model.eval()
             att_model.eval()
-            mod_model.eval()
-            mod_transformer.eval()
-            attn_img.eval()
-            attn_att.eval()
-            decoder_img.eval()
-            decoder_att.eval()
-            acc_zsl = compute_accuracy(image_model, att_model, mod_transformer, attn_img, attn_att, memory,
+            acc_zsl = compute_accuracy(image_model, att_model, relation_net, memory,
                                        test_unseen_loader, test_att, test_id, args)
-            acc_seen_gzsl = compute_accuracy(image_model, att_model, mod_transformer, attn_img, attn_att, memory,
+            acc_seen_gzsl = compute_accuracy(image_model, att_model, relation_net, memory,
                                              test_seen_loader, all_att, all_id, args)
-            acc_unseen_gzsl = compute_accuracy(image_model, att_model, mod_transformer, attn_img, attn_att, memory,
+            acc_unseen_gzsl = compute_accuracy(image_model, att_model, relation_net, memory,
                                                test_unseen_loader, all_att, all_id, args)
             H = 2 * acc_seen_gzsl * acc_unseen_gzsl / (acc_seen_gzsl + acc_unseen_gzsl)
             if acc_zsl > pre_acc:

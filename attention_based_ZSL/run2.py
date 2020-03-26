@@ -13,7 +13,8 @@ from PIL import Image
 from dataloaders.dataset import ZSLDataset
 from models import ImageModels, AttModels, ImageModels2
 from models import ModalityClassifier, ModalityTransformer, Attention
-from steps import train
+from models import RelationNet
+from steps import train2
 import torchvision.transforms as transforms 
 import scipy.io as sio
 
@@ -36,18 +37,6 @@ parser.add_argument('--workers',default=0,type=int,help='number of worker in the
 parser.add_argument('--lr_A', '--learning-rate-attribute', default=0.001, type=float,
     metavar='LR', help='initial learning rate')
 parser.add_argument('--lr_I', '--learning-rate-image', default=0.001, type=float,
-    metavar='LR', help='initial learning rate')
-parser.add_argument('--lr_M', '--learning-rate-modal', default=0.001, type=float,
-    metavar='LR', help='initial learning rate')
-parser.add_argument('--lr_MT', '--learning-rate-modal-trans', default=0.001, type=float,
-    metavar='LR', help='initial learning rate')
-parser.add_argument('--lr_AI', '--learning-rate-attn-img', default=0.001, type=float,
-    metavar='LR', help='initial learning rate')
-parser.add_argument('--lr_AA', '--learning-rate-attn-att', default=0.001, type=float,
-    metavar='LR', help='initial learning rate')
-parser.add_argument('--lr_RI', '--learning-rate-recon-img', default=0.001, type=float,
-    metavar='LR', help='initial learning rate')
-parser.add_argument('--lr_RA', '--learning-rate-recon-att', default=0.001, type=float,
     metavar='LR', help='initial learning rate')
 parser.add_argument('--lr-decay', default=100, type=int, metavar='LRDECAY',
     help='Divide the learning rate by 10 every lr_decay epochs')
@@ -74,10 +63,6 @@ parser.add_argument('--Loss_dist',default = False)
 parser.add_argument('--gamma_dist',default = 1.0)
 parser.add_argument('--Loss_hinge',default = False)
 parser.add_argument('--gamma_hinge',default = 1.0)
-parser.add_argument('--Loss_modal', default=True)
-parser.add_argument('--gamma_modal', type=float, default=0.1)
-parser.add_argument('--Loss_recon', default=True)
-parser.add_argument('--gamma_recon', type=float, default=0.1)
 
 parser.add_argument('--smooth_gamma',type=float,default=10)
 
@@ -98,18 +83,12 @@ parser.add_argument('--test_set_len', type=int, default = 2967)
 # unused
 parser.add_argument('--modules_used', default = 'memory_fusion')
 
-# Memory Fusion 相关参数
-parser.add_argument('--num_gst', type=int, default = 128)
-parser.add_argument('--attention_type', default='dot_attention')
-parser.add_argument('--num_heads', type=int, default=4)
-parser.add_argument('--normalize', default=False)
-
 args = parser.parse_args()
 
 resume = args.resume
 
 print(args)
-print('Method: ', args.modules_used)
+
 random.seed(args.manualSeed)
 np.random.seed(args.manualSeed)
 torch.manual_seed(args.manualSeed)
@@ -161,12 +140,6 @@ test_unseen_loader = torch.utils.data.DataLoader(
 image_model = ImageModels.Resnet101()
 # image_model = ImageModels2.Resnet101()
 att_model = AttModels.AttEncoder(args)
-mod_model = ModalityClassifier.ModalityClassifier(args)
-mod_transformer = ModalityTransformer.ModalityTransformer(args)
-attn_img = Attention.MultiHeadAttention(args)
-attn_att = Attention.MultiHeadAttention(args)
-decoder_img = ImageModels.ImgDecoder(args)
-decoder_att = AttModels.AttDecoder(args)
+relation_net = RelationNet.RelationNet(args)
 
-train(image_model, att_model, mod_model, mod_transformer, attn_img, attn_att, decoder_img, decoder_att,
-      train_loader, test_seen_loader, test_unseen_loader, args)
+train2(image_model, att_model, relation_net, train_loader, test_seen_loader, test_unseen_loader, args)

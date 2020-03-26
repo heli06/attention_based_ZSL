@@ -11,9 +11,9 @@ class ModalityClassifier(nn.Module):
         self.fc1 = nn.Linear(args.out_DIM, 512)
         self.fc2 = nn.Linear(512, 64)
         self.fc3 = nn.Linear(64, 2)
-        nn.init.xavier_uniform(self.fc1.weight.data)
-        nn.init.xavier_uniform(self.fc2.weight.data)
-        nn.init.xavier_uniform(self.fc3.weight.data)
+        nn.init.xavier_uniform_(self.fc1.weight.data)
+        nn.init.xavier_uniform_(self.fc2.weight.data)
+        nn.init.xavier_uniform_(self.fc3.weight.data)
     def forward(self, input):
         x = self.fc1(input)
         x = F.relu(x)

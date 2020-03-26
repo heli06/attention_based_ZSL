@@ -26,6 +26,12 @@ class MultiHeadAttention(nn.Module):
         self.vsLinear = nn.Linear(args.out_DIM // args.num_heads, self.num_units)
         self.addLinear = nn.Linear(args.out_DIM // args.num_heads, self.num_units)
 
+        nn.init.xavier_uniform_(self.conv1d.weight.data)
+        nn.init.xavier_uniform_(self.qsLinear.weight.data)
+        nn.init.xavier_uniform_(self.ksLinear.weight.data)
+        nn.init.xavier_uniform_(self.vsLinear.weight.data)
+        nn.init.xavier_uniform_(self.addLinear.weight.data)
+
     def forward(self, query, value):
         if self.num_units % self.num_heads != 0:
             raise ValueError('Multi head attention requires that num_units '
