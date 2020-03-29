@@ -37,9 +37,6 @@ def train2(image_model, att_model, relation_net, train_loader, test_seen_loader,
         att_model.load_state_dict(torch.load("%s/models/att_model.%d.pth" % (exp_dir, epoch)))
         print("loaded parameters from epoch %d" % epoch)
 
-    # Memory
-    memory = Variable(torch.normal(mean=0., std=0.5, size=(
-        args.num_gst, args.out_DIM // args.num_heads)), requires_grad=True).to(device)
     
     image_model = image_model.to(device)
     att_model = att_model.to(device)
@@ -125,7 +122,7 @@ def train2(image_model, att_model, relation_net, train_loader, test_seen_loader,
             final_att_output = None
 
             # 输出图像特征向量和属性向量
-            image_output = image_model(image_input)                            
+            image_output = image_model(image_input)
             att_output = att_model(att_input)
 
                 # print('--------------------------------------------------------------------')
@@ -198,11 +195,11 @@ def train2(image_model, att_model, relation_net, train_loader, test_seen_loader,
             # test_unseen: (2967,)
             image_model.eval()
             att_model.eval()
-            acc_zsl = compute_accuracy(image_model, att_model, relation_net, memory,
+            acc_zsl = compute_accuracy(image_model, att_model, relation_net,
                                        test_unseen_loader, test_att, test_id, args)
-            acc_seen_gzsl = compute_accuracy(image_model, att_model, relation_net, memory,
+            acc_seen_gzsl = compute_accuracy(image_model, att_model, relation_net,
                                              test_seen_loader, all_att, all_id, args)
-            acc_unseen_gzsl = compute_accuracy(image_model, att_model, relation_net, memory,
+            acc_unseen_gzsl = compute_accuracy(image_model, att_model, relation_net,
                                                test_unseen_loader, all_att, all_id, args)
             H = 2 * acc_seen_gzsl * acc_unseen_gzsl / (acc_seen_gzsl + acc_unseen_gzsl)
             if acc_zsl > pre_acc:
@@ -218,7 +215,7 @@ def train2(image_model, att_model, relation_net, train_loader, test_seen_loader,
                   % (pre_epoch, i, pre_acc, pre_seen, pre_unseen, pre_H))
                 
 
-def compute_accuracy(image_model, att_model, mod_transformer, attn_img, attn_att, memory, test_loader, test_att, test_id, args):
+def compute_accuracy(image_model, att_model, relation_net, test_loader, test_att, test_id, args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     outpred = []
     test_label = []
@@ -227,15 +224,6 @@ def compute_accuracy(image_model, att_model, mod_transformer, attn_img, attn_att
     test_att = test_att.float().to(device)
     test_att_output = att_model(test_att)
     test_size = test_att_output.size()[0]
-    if args.modules_used == 'memory_fusion':
-        # test_att_output = attn_att(mod_transformer(test_att_output).unsqueeze(1), memory.repeat(test_size, 1, 1))
-        test_att_output = attn_att(test_att_output.unsqueeze(1), memory.repeat(test_size, 1, 1))
-    elif args.modules_used == 'modal_classifier':
-        test_att_output = mod_transformer(test_att_output)
-    elif args.modules_used == 'unused' or args.modules_used == 'classifier_only':
-        pass
-    else:
-        raise ValueError('Error Method')
 
     test_att_output = test_att_output / test_att_output.norm(dim=1,keepdim=True)
     
@@ -245,23 +233,6 @@ def compute_accuracy(image_model, att_model, mod_transformer, attn_img, attn_att
         
         image_input = image_input.float().to(device)
         image_input = image_input.squeeze(1)
-
-        if args.modules_used == 'memory_fusion':
-            batch_size = image_input.size()[0]
-            # image_output = attn_img(mod_transformer(image_model(image_input)).unsqueeze(1), memory.repeat(batch_size, 1, 1))
-            # att_output = attn_att(mod_transformer(att_model(att_input)).unsqueeze(1), memory.repeat(batch_size, 1, 1))
-            image_output = attn_img(image_model(image_input).unsqueeze(1),
-                                    memory.repeat(batch_size, 1, 1))
-            att_output = attn_att(att_model(att_input).unsqueeze(1), memory.repeat(batch_size, 1, 1))
-        elif args.modules_used == 'modal_classifier':
-            image_output = mod_transformer(image_model(image_input))
-            att_output = mod_transformer(att_model(att_input))
-        elif args.modules_used == 'unused' or args.modules_used == 'classifier_only':
-            image_output = image_model(image_input)
-            att_output = att_model(att_input)
-        else:
-            raise ValueError('Error Method')
-
 
         image_output = image_output / image_output.norm(dim=1, keepdim=True)
         att_output = att_output / att_output.norm(dim=1,keepdim=True)

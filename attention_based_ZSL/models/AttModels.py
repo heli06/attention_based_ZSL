@@ -11,7 +11,7 @@ class AttEncoder(nn.Module):
     def __init__(self,args):
         super(AttEncoder,self).__init__()
         self.fc1 = nn.Linear(args.att_DIM,args.att_hidDIM)
-        self.fc2 = nn.Linear(args.att_hidDIM, args.out_DIM)
+        self.fc2 = nn.Linear(args.att_hidDIM, args.att_outDIM)
         nn.init.xavier_uniform_(self.fc1.weight.data)
         nn.init.xavier_uniform_(self.fc2.weight.data)
     def forward(self, input):

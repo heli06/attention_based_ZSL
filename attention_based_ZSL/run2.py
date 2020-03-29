@@ -53,7 +53,11 @@ parser.add_argument('--img_size',type=int,default = 244,help='image size')
 
 parser.add_argument('--att_DIM',type=int, default = 312)
 parser.add_argument('--att_hidDIM',type=int, default = 1600)
-parser.add_argument('--out_DIM',type=int, default = 2048)
+parser.add_argument('--att_outDIM',type=int, default = 2048)
+
+parser.add_argument('--img_outDIM',type=int, default = 2048)
+
+parser.add_argument('--rel_hidDIM',type=int, default = 72)
 
 parser.add_argument('--Loss_cont',default = False)
 parser.add_argument('--gamma_cont',default = 1.0)
