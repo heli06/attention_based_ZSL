@@ -26,6 +26,7 @@ parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFo
 #'/tudelft.net/staff-bulk/ewi/insy/MMC/xinsheng/data/birds'
 parser.add_argument('--data_path', type = str, default='../Bird_for_ZSL') #
 parser.add_argument('--class_num',type = int, default= 200)
+parser.add_argument('--train_class_num',type = int, default= 150)
 parser.add_argument('--exp_dir', type = str, default= 'outputs/baseline')
 parser.add_argument("--resume", action="store_true", default=True,
         help="load from exp_dir if True")
@@ -61,7 +62,7 @@ parser.add_argument('--rel_hidDIM',type=int, default = 72)
 
 parser.add_argument('--Loss_cont',default = False)
 parser.add_argument('--gamma_cont',default = 1.0)
-parser.add_argument('--Loss_batch',default = True)
+parser.add_argument('--Loss_batch',default = False)
 parser.add_argument('--gamma_batch',default = 1.0)
 parser.add_argument('--Loss_dist',default = False)
 parser.add_argument('--gamma_dist',default = 1.0)
@@ -71,6 +72,7 @@ parser.add_argument('--gamma_hinge',default = 1.0)
 parser.add_argument('--smooth_gamma',type=float,default=10)
 
 # 新增加的载入ZSL和GZSL文件的参数
+parser.add_argument('--train_class_id',default = 'train_class_id.txt')
 parser.add_argument('--test_class_id',default = 'test_class_id.txt')
 parser.add_argument('--test_class_attr',default = 'test_class_attribute_labels_continuous.txt')
 parser.add_argument('--all_class_id',default = 'all_class_id.txt')

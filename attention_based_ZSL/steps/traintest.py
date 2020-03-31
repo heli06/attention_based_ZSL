@@ -135,7 +135,7 @@ def train(image_model, att_model, mod_model, mod_transformer, attn_img, attn_att
     attn_att.train()
     decoder_img.train()
     decoder_att.train()
-    criterion_hinge = nn.TripletMarginLoss(margin=1.0,p=2)
+    criterion_hinge = nn.TripletMarginLoss(margin=1.0, p=2)
     criterion_e = nn.MSELoss()
     criterion_s = nn.CosineSimilarity()
     criterion_c = nn.CrossEntropyLoss()    
@@ -272,7 +272,7 @@ def train(image_model, att_model, mod_model, mod_transformer, attn_img, attn_att
                 loss += loss_dist*args.gamma_dist            
             
             if args.Loss_hinge:
-                neg_pair_audio,neg_pair_image = hardest_negative_mining_pair(image_output,audio_output,cls_id)
+                neg_pair_audio,neg_pair_image = hardest_negative_mining_pair(image_output, audio_output, cls_id)
                 # neg_single_audio = hardest_negative_mining_single(audio_output,cls_id)
                 # neg_single_image = hardest_negative_mining_single(image_output,cls_id)
                 hinge_IAA = criterion_hinge(image_output,att_output,neg_pair_att)

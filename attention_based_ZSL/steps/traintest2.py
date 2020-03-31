@@ -91,6 +91,9 @@ def train2(image_model, att_model, relation_net, train_loader, test_seen_loader,
    
     all_attr_file = os.path.join(args.data_path, args.all_class_attr)
     all_att = np.loadtxt(all_attr_file)
+
+    train_id_file = os.path.join(args.data_path, args.train_class_id)
+    train_id = np.loadtxt(train_id_file, dtype=int)
     
     test_id_file = os.path.join(args.data_path, args.test_class_id)
     test_id = np.loadtxt(test_id_file, dtype=int)
@@ -106,9 +109,9 @@ def train2(image_model, att_model, relation_net, train_loader, test_seen_loader,
         end_time = time.time()
         image_model.train()
         att_model.train()
+        relation_net.train()
 
         for i, (image_input, att_input, cls_id, key, label) in enumerate(train_loader):
-            
             att_input = att_input.float().to(device)   
             B = att_input.size(0)         
             label = label.long().to(device)
@@ -124,6 +127,25 @@ def train2(image_model, att_model, relation_net, train_loader, test_seen_loader,
             # 输出图像特征向量和属性向量
             image_output = image_model(image_input)
             att_output = att_model(att_input)
+
+            neg_att_input = []
+            for l in label:
+                neg_l = None
+                while neg_l == l:  # 查找同标签不同图像
+                    neg_l = np.random.choice(args.train_class_num)
+
+                neg_att_input.append(all_att[train_id[neg_l]])
+
+            neg_att_input = torch.FloatTensor(neg_att_input).float().to(device)
+            neg_att_output = att_model(neg_att_input)
+            pos_output = relation_net(image_output, att_output)
+            neg_output = relation_net(image_output, neg_att_output)
+            output = torch.cat((pos_output, neg_output), dim=0)
+            y1 = np.ones((args.batch_size,), dtype=np.int)
+            y1 = torch.from_numpy(y1).to(device)
+            y0 = np.zeros((args.batch_size,), dtype=np.int)
+            y0 = torch.from_numpy(y0).to(device)
+            y = torch.cat((y1, y0), dim=1)
 
                 # print('--------------------------------------------------------------------')
                 # print('Best_zsl:', pre_acc)
@@ -154,6 +176,8 @@ def train2(image_model, att_model, relation_net, train_loader, test_seen_loader,
             # neg_samples = normalizeFeature(neg_samples)
             # loss_t = criterion(image_output,audio_output,neg_samples)
             loss = 0
+            if args.Loss_CE:
+                loss = criterion_c(output, y)
             if args.Loss_cont:
                 loss = criterion_e(final_image_output, final_att_output) * args.gamma_cont
             if args.Loss_batch:
@@ -234,6 +258,9 @@ def compute_accuracy(image_model, att_model, relation_net, test_loader, test_att
         image_input = image_input.float().to(device)
         image_input = image_input.squeeze(1)
 
+        image_output = image_model(image_input)
+        att_output = att_model(att_input)
+
         image_output = image_output / image_output.norm(dim=1, keepdim=True)
         att_output = att_output / att_output.norm(dim=1,keepdim=True)
         
@@ -253,4 +280,4 @@ def compute_accuracy(image_model, att_model, relation_net, test_loader, test_att
         
     acc = acc / unique_labels.shape[0]
     # acc = np.equal(outpred, test_label).mean()
-    return acc          
+    return acc
