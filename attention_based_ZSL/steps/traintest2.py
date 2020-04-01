@@ -111,9 +111,10 @@ def train2(image_model, att_model, relation_net, train_loader, test_seen_loader,
         att_model.train()
         relation_net.train()
 
-        for i, (image_input, att_input, cls_id, key, label) in enumerate(train_loader):
+        for i, (image_input, att_input, neg_att_input, cls_id, key, label) in enumerate(train_loader):
             att_input = att_input.float().to(device)   
-            B = att_input.size(0)         
+            B = att_input.size(0)
+            neg_att_input = neg_att_input.float().to(device)
             label = label.long().to(device)
             image_input = image_input.float().to(device)
             image_input = image_input.squeeze(1)            
@@ -127,17 +128,8 @@ def train2(image_model, att_model, relation_net, train_loader, test_seen_loader,
             # 输出图像特征向量和属性向量
             image_output = image_model(image_input)
             att_output = att_model(att_input)
-
-            neg_att_input = []
-            for l in label:
-                neg_l = None
-                while neg_l == l:  # 查找同标签不同图像
-                    neg_l = np.random.choice(args.train_class_num)
-
-                neg_att_input.append(all_att[train_id[neg_l]])
-
-            neg_att_input = torch.FloatTensor(neg_att_input).float().to(device)
             neg_att_output = att_model(neg_att_input)
+
             pos_output = relation_net(image_output, att_output)
             neg_output = relation_net(image_output, neg_att_output)
             output = torch.cat((pos_output, neg_output), dim=0)
@@ -219,6 +211,7 @@ def train2(image_model, att_model, relation_net, train_loader, test_seen_loader,
             # test_unseen: (2967,)
             image_model.eval()
             att_model.eval()
+            relation_net.eval()
             acc_zsl = compute_accuracy(image_model, att_model, relation_net,
                                        test_unseen_loader, test_att, test_id, args)
             acc_seen_gzsl = compute_accuracy(image_model, att_model, relation_net,
@@ -262,10 +255,15 @@ def compute_accuracy(image_model, att_model, relation_net, test_loader, test_att
         att_output = att_model(att_input)
 
         image_output = image_output / image_output.norm(dim=1, keepdim=True)
-        att_output = att_output / att_output.norm(dim=1,keepdim=True)
+        att_output = att_output / att_output.norm(dim=1, keepdim=True)
         
         for j in range(len(label)):
-            outputLabel = kNNClassify(image_output.cpu().data.numpy()[j, :], test_att_output.cpu().data.numpy(), test_id, 1)
+            score = []
+            for e in test_att_output:
+                score.append(F.softmax(relation_net(image_output[j, :], e)).data[1])
+
+            score = np.array(score)
+            outputLabel = np.argmax(score)
             outpred.append(outputLabel)
             test_label.append(label[j])
     

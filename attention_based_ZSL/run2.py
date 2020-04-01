@@ -60,6 +60,7 @@ parser.add_argument('--img_outDIM',type=int, default = 2048)
 
 parser.add_argument('--rel_hidDIM',type=int, default = 72)
 
+parser.add_argument('--Loss_CE',default = True)
 parser.add_argument('--Loss_cont',default = False)
 parser.add_argument('--gamma_cont',default = 1.0)
 parser.add_argument('--Loss_batch',default = False)
@@ -115,7 +116,7 @@ image_transform = transforms.Compose([
     transforms.RandomHorizontalFlip()])
 
 
-dataset_train = ZSLDataset(args.data_path, args,'train',
+dataset_train = ZSLDataset(args.data_path, args,'train_neg',
                         transform=image_transform)
 
 dataset_test_seen = ZSLDataset(args.data_path, args,'test_seen',                        

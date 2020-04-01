@@ -65,6 +65,16 @@ class ZSLDataset(data.Dataset):
             self.filenames = self.load_filenames(data_dir,'filenames_train.pickle')
             self.class_id = self.load_filenames(data_dir,'class_ids_train.pickle')
             self.attributes = self.load_filenames(data_dir,'attributes_train.pickle')
+
+        elif split == 'train_neg':
+            self.filenames = self.load_filenames(data_dir, 'filenames_train.pickle')
+            self.class_id = self.load_filenames(data_dir, 'class_ids_train.pickle')
+            self.attributes = self.load_filenames(data_dir, 'attributes_train.pickle')
+            train_id_file = os.path.join(args.data_path, args.train_class_id)
+            self.train_id = np.loadtxt(train_id_file, dtype=int)
+            all_attr_file = os.path.join(args.data_path, args.all_class_attr)
+            self.all_att = np.loadtxt(all_attr_file)
+            self.train_class_num = args.train_class_num
             
         elif split == 'test_seen':
             self.filenames = self.load_filenames(data_dir,'filenames_test_seen.pickle')
@@ -77,7 +87,7 @@ class ZSLDataset(data.Dataset):
             self.attributes = self.load_filenames(data_dir,'attributes_test.pickle')
 
         # cacluate the sequence label for the whole dataset
-        if self.split =='train':
+        if self.split =='train' or self.split == 'train_neg':
             unique_id = np.unique(self.class_id)
             seq_labels = np.zeros(args.class_num)
             for i in range(unique_id.shape[0]):
@@ -124,7 +134,7 @@ class ZSLDataset(data.Dataset):
         # start = time.time()
         key = self.filenames[index]     #图像名称
         cls_id = self.class_id[index]    
-        if self.split =='train':
+        if self.split =='train' or self.split == 'train_neg':
             label = self.labels[index]
         else:
             label = cls_id  #        
@@ -141,11 +151,19 @@ class ZSLDataset(data.Dataset):
         imgs = get_imgs(img_name, bbox, self.transform, normalize=self.norm)
         
         attrs = self.attributes[index]
-        
-        return imgs, attrs, cls_id, key, label    #  处理完的图像 ，单词编号 ，单词数量（固定的cfg.TEXT.WORDS_NUM） ，类别ID，图像名称
-        # else:
-        #     return imgs, caps, cls_id, key
-        #只需要输出imgs, caps, cls_id， key 即可
+
+        if self.split == 'train_neg':
+            neg_l = None
+            while neg_l == label:  # 查找同标签不同图像
+                neg_l = np.random.choice(self.train_class_num)
+
+            attrs_neg = self.all_att[self.rain_id[neg_l]]
+            return imgs, attrs, attrs_neg, cls_id, key, label
+        else:
+            return imgs, attrs, cls_id, key, label    #  处理完的图像 ，单词编号 ，单词数量（固定的cfg.TEXT.WORDS_NUM） ，类别ID，图像名称
+            # else:
+            #     return imgs, caps, cls_id, key
+            #只需要输出imgs, caps, cls_id， key 即可
 
     def __len__(self):
         return len(self.filenames)
