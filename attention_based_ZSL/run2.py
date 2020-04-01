@@ -14,7 +14,7 @@ from dataloaders.dataset import ZSLDataset
 from models import ImageModels, AttModels, ImageModels2
 from models import ModalityClassifier, ModalityTransformer, Attention
 from models import RelationNet
-from steps import train2
+from steps import traintest2
 import torchvision.transforms as transforms 
 import scipy.io as sio
 
@@ -24,7 +24,7 @@ os.environ['CUDA_VISIBLE_DEVICES']='0, 1, 2, 3'
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 #'/media/shawn/data/Data/birds'
 #'/tudelft.net/staff-bulk/ewi/insy/MMC/xinsheng/data/birds'
-parser.add_argument('--data_path', type = str, default='../Bird_for_ZSL') #
+parser.add_argument('--data_path', type = str, default='../Bird_for_ZSL')
 parser.add_argument('--class_num',type = int, default= 200)
 parser.add_argument('--train_class_num',type = int, default= 150)
 parser.add_argument('--exp_dir', type = str, default= 'outputs/baseline')
@@ -38,6 +38,8 @@ parser.add_argument('--workers',default=0,type=int,help='number of worker in the
 parser.add_argument('--lr_A', '--learning-rate-attribute', default=0.001, type=float,
     metavar='LR', help='initial learning rate')
 parser.add_argument('--lr_I', '--learning-rate-image', default=0.001, type=float,
+    metavar='LR', help='initial learning rate')
+parser.add_argument('--lr_R', '--learning-rate-relation', default=0.001, type=float,
     metavar='LR', help='initial learning rate')
 parser.add_argument('--lr-decay', default=100, type=int, metavar='LRDECAY',
     help='Divide the learning rate by 10 every lr_decay epochs')
@@ -149,4 +151,4 @@ image_model = ImageModels.Resnet101()
 att_model = AttModels.AttEncoder(args)
 relation_net = RelationNet.RelationNet(args)
 
-train2(image_model, att_model, relation_net, train_loader, test_seen_loader, test_unseen_loader, args)
+traintest2.train2(image_model, att_model, relation_net, train_loader, test_seen_loader, test_unseen_loader, args)

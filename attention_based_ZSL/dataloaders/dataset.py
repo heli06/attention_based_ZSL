@@ -70,6 +70,7 @@ class ZSLDataset(data.Dataset):
             self.filenames = self.load_filenames(data_dir, 'filenames_train.pickle')
             self.class_id = self.load_filenames(data_dir, 'class_ids_train.pickle')
             self.attributes = self.load_filenames(data_dir, 'attributes_train.pickle')
+
             train_id_file = os.path.join(args.data_path, args.train_class_id)
             self.train_id = np.loadtxt(train_id_file, dtype=int)
             all_attr_file = os.path.join(args.data_path, args.all_class_attr)
@@ -153,11 +154,12 @@ class ZSLDataset(data.Dataset):
         attrs = self.attributes[index]
 
         if self.split == 'train_neg':
-            neg_l = None
+            neg_l = label
             while neg_l == label:  # 查找同标签不同图像
                 neg_l = np.random.choice(self.train_class_num)
 
-            attrs_neg = self.all_att[self.rain_id[neg_l]]
+            attrs_neg = self.all_att[self.train_id[neg_l]]
+
             return imgs, attrs, attrs_neg, cls_id, key, label
         else:
             return imgs, attrs, cls_id, key, label    #  处理完的图像 ，单词编号 ，单词数量（固定的cfg.TEXT.WORDS_NUM） ，类别ID，图像名称
@@ -167,8 +169,3 @@ class ZSLDataset(data.Dataset):
 
     def __len__(self):
         return len(self.filenames)
-
-
-
-
-

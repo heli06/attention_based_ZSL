@@ -40,9 +40,11 @@ def train2(image_model, att_model, relation_net, train_loader, test_seen_loader,
     
     image_model = image_model.to(device)
     att_model = att_model.to(device)
+    relation_net = relation_net.to(device)
     # Set up the optimizer
     image_trainables = [p for p in image_model.parameters() if p.requires_grad] # if p.requires_grad
     att_trainables = [p for p in att_model.parameters() if p.requires_grad]
+    rel_trainables = [p for p in relation_net.parameters() if p.requires_grad]
 
     if args.optim == 'sgd':
         optimizer = torch.optim.SGD(att_trainables, args.lr_A,
@@ -51,6 +53,9 @@ def train2(image_model, att_model, relation_net, train_loader, test_seen_loader,
         optimizer_img = torch.optim.SGD(image_trainables, args.lr_I,
                                     momentum=args.momentum,
                                     weight_decay=args.weight_decay)
+        optimizer_rel = torch.optim.SGD(rel_trainables, args.lr_R,
+                                        momentum=args.momentum,
+                                        weight_decay=args.weight_decay)
 
     elif args.optim == 'adam':
         optimizer = torch.optim.Adam(att_trainables, args.lr_A,
@@ -59,6 +64,9 @@ def train2(image_model, att_model, relation_net, train_loader, test_seen_loader,
         optimizer_img = torch.optim.Adam(image_trainables, args.lr_I,
                                     weight_decay=args.weight_decay,
                                     betas=(0.95, 0.999))
+        optimizer_rel = torch.optim.Adam(rel_trainables, args.lr_R,
+                                         weight_decay=args.weight_decay,
+                                         betas=(0.95, 0.999))
     else:
         raise ValueError('Optimizer %s is not supported' % args.optim)
     
@@ -77,6 +85,7 @@ def train2(image_model, att_model, relation_net, train_loader, test_seen_loader,
     print("start training...")
     image_model.train()
     att_model.train()
+    relation_net.train()
     criterion_hinge = nn.TripletMarginLoss(margin=1.0,p=2)
     criterion_e = nn.MSELoss()
     criterion_s = nn.CosineSimilarity()
@@ -101,11 +110,12 @@ def train2(image_model, att_model, relation_net, train_loader, test_seen_loader,
     all_id_file = os.path.join(args.data_path, args.all_class_id)
     all_id = np.loadtxt(all_id_file, dtype=int)
     
-    pre_acc = 0
+    pre_acc = -1
     while epoch<=500:
         epoch += 1
         adjust_learning_rate(args.lr_A, args.lr_decay, optimizer, epoch)
         adjust_learning_rate(args.lr_I, args.lr_decay, optimizer_img, epoch)
+        adjust_learning_rate(args.lr_R, args.lr_decay, optimizer_rel, epoch)
         end_time = time.time()
         image_model.train()
         att_model.train()
@@ -121,6 +131,7 @@ def train2(image_model, att_model, relation_net, train_loader, test_seen_loader,
     
             optimizer.zero_grad()
             optimizer_img.zero_grad()
+            optimizer_rel.zero_grad()
 
             final_image_output = None
             final_att_output = None
@@ -130,14 +141,14 @@ def train2(image_model, att_model, relation_net, train_loader, test_seen_loader,
             att_output = att_model(att_input)
             neg_att_output = att_model(neg_att_input)
 
-            pos_output = relation_net(image_output, att_output)
-            neg_output = relation_net(image_output, neg_att_output)
+            pos_output = relation_net(torch.cat((image_output, att_output), dim=-1))
+            neg_output = relation_net(torch.cat((image_output, neg_att_output), dim=-1))
             output = torch.cat((pos_output, neg_output), dim=0)
             y1 = np.ones((args.batch_size,), dtype=np.int)
             y1 = torch.from_numpy(y1).to(device)
             y0 = np.zeros((args.batch_size,), dtype=np.int)
             y0 = torch.from_numpy(y0).to(device)
-            y = torch.cat((y1, y0), dim=1)
+            y = torch.cat((y1, y0), dim=-1)
 
                 # print('--------------------------------------------------------------------')
                 # print('Best_zsl:', pre_acc)
@@ -195,6 +206,7 @@ def train2(image_model, att_model, relation_net, train_loader, test_seen_loader,
             loss.backward()
             optimizer.step()
             optimizer_img.step()
+            optimizer_rel.step()
             
             # record loss
             loss_meter.update(loss.item(), B)
@@ -258,12 +270,10 @@ def compute_accuracy(image_model, att_model, relation_net, test_loader, test_att
         att_output = att_output / att_output.norm(dim=1, keepdim=True)
         
         for j in range(len(label)):
-            score = []
-            for e in test_att_output:
-                score.append(F.softmax(relation_net(image_output[j, :], e)).data[1])
-
-            score = np.array(score)
-            outputLabel = np.argmax(score)
+            output_repeat = image_output[j, :].repeat(test_size, 1)
+            output = F.softmax(relation_net(torch.cat((output_repeat, test_att_output), dim=-1)))
+            index = int(torch.max(output[:, 1], -1)[1])
+            outputLabel = test_id[index]
             outpred.append(outputLabel)
             test_label.append(label[j])
     
