@@ -92,6 +92,7 @@ def train2(image_model, att_model, relation_net, train_loader, test_seen_loader,
     criterion_c = nn.CrossEntropyLoss()    
     criterion_k = nn.KLDivLoss()
     criterion_m = nn.MSELoss()
+    criterion_b = nn.BCELoss()
     
     # 载入ZSL和GZSL评估所需要的id和attr文件
     print('载入id和attr文件')
@@ -138,16 +139,22 @@ def train2(image_model, att_model, relation_net, train_loader, test_seen_loader,
 
             # 输出图像特征向量和属性向量
             image_output = image_model(image_input)
-            att_output = att_model(att_input)
-            neg_att_output = att_model(neg_att_input)
+            # att_output = att_model(att_input)
+            att_output = att_input
+            # neg_att_output = att_model(neg_att_input)
+            neg_att_output = neg_att_input
 
+            image_output = F.normalize(image_output, p=2, dim=1)
+            att_output = F.normalize(att_output, p=2, dim=1)
+            neg_att_output = F.normalize(neg_att_output, p=2, dim=1)
             pos_output = relation_net(torch.cat((image_output, att_output), dim=-1))
             neg_output = relation_net(torch.cat((image_output, neg_att_output), dim=-1))
             output = torch.cat((pos_output, neg_output), dim=0)
-            y1 = np.ones((args.batch_size,), dtype=np.int)
-            y1 = torch.from_numpy(y1).to(device)
-            y0 = np.zeros((args.batch_size,), dtype=np.int)
-            y0 = torch.from_numpy(y0).to(device)
+
+            y1 = np.ones((args.batch_size,), dtype=np.float)
+            y1 = torch.from_numpy(y1).float().to(device)
+            y0 = np.zeros((args.batch_size,), dtype=np.float)
+            y0 = torch.from_numpy(y0).float().to(device)
             y = torch.cat((y1, y0), dim=-1)
 
                 # print('--------------------------------------------------------------------')
@@ -179,6 +186,8 @@ def train2(image_model, att_model, relation_net, train_loader, test_seen_loader,
             # neg_samples = normalizeFeature(neg_samples)
             # loss_t = criterion(image_output,audio_output,neg_samples)
             loss = 0
+            if args.Loss_BCE:
+                loss = criterion_b(output, y)
             if args.Loss_CE:
                 loss = criterion_c(output, y)
             if args.Loss_cont:
@@ -251,10 +260,11 @@ def compute_accuracy(image_model, att_model, relation_net, test_loader, test_att
     
     test_att = torch.from_numpy(test_att)
     test_att = test_att.float().to(device)
-    test_att_output = att_model(test_att)
+    # test_att_output = att_model(test_att)
+    test_att_output = test_att
     test_size = test_att_output.size()[0]
 
-    test_att_output = test_att_output / test_att_output.norm(dim=1,keepdim=True)
+    test_att_output = test_att_output / test_att_output.norm(dim=1, keepdim=True)
     
     for i, (image_input, att_input, cls_id, key, label) in enumerate(test_loader):
         att_input = att_input.float().to(device)
@@ -264,15 +274,16 @@ def compute_accuracy(image_model, att_model, relation_net, test_loader, test_att
         image_input = image_input.squeeze(1)
 
         image_output = image_model(image_input)
-        att_output = att_model(att_input)
+        # att_output = att_model(att_input)
+        att_output = att_input
 
         image_output = image_output / image_output.norm(dim=1, keepdim=True)
         att_output = att_output / att_output.norm(dim=1, keepdim=True)
         
         for j in range(len(label)):
             output_repeat = image_output[j, :].repeat(test_size, 1)
-            output = F.softmax(relation_net(torch.cat((output_repeat, test_att_output), dim=-1)))
-            index = int(torch.max(output[:, 1], -1)[1])
+            output = relation_net(torch.cat((output_repeat, test_att_output), dim=-1))
+            index = int(torch.max(output[:, 0], -1)[1])
             outputLabel = test_id[index]
             outpred.append(outputLabel)
             test_label.append(label[j])

@@ -141,6 +141,7 @@ def train(image_model, att_model, mod_model, mod_transformer, attn_img, attn_att
     criterion_c = nn.CrossEntropyLoss()    
     criterion_k = nn.KLDivLoss()
     criterion_m = nn.MSELoss()
+    criterion_b = nn.BCELoss()
     
     # 载入ZSL和GZSL评估所需要的id和attr文件
     print('载入id和attr文件')
