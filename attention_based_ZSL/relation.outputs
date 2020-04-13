@@ -1,0 +1,8 @@
+Namespace(CUDA=True, Loss_BCE=True, Loss_CE=False, Loss_batch=False, Loss_cont=False, Loss_dist=False, Loss_hinge=False, all_class_attr='class_attribute_labels_continuous.txt', all_class_id='all_class_id.txt', att_DIM=312, att_hidDIM=800, att_outDIM=1024, batch_size=128, class_num=200, data_path='../Bird_for_ZSL', exp_dir='outputs/baseline', gamma_batch=1.0, gamma_cont=1.0, gamma_dist=1.0, gamma_hinge=1.0, gpu_id=0, img_outDIM=1024, img_size=244, lr=0.001, lr_decay=20, manualSeed=200, modules_used='memory_fusion', momentum=0.9, n_epochs=100, optim='adam', rel_hidDIM=72, resume=True, save_file='smooth_10.text', smooth_gamma=10.0, smooth_gamma_r=10.0, test_class_attr='test_class_attribute_labels_continuous.txt', test_class_id='test_class_id.txt', test_seen_set_len=1770, test_set_len=2967, train_class_id='train_class_id.txt', train_class_num=150, train_set_len=7051, weight_decay=0.0001, workers=0)
+dataset_train.len 7051
+dataset_test_seen 1770
+dataset_test 2967
+current #steps=0, #epochs=0
+start training...
+载入id和attr文件
+epoch: 1 | iteration = 0 | loss = 5

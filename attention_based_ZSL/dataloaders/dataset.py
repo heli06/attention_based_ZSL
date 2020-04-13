@@ -148,7 +148,9 @@ class ZSLDataset(data.Dataset):
             bbox = None
             data_dir = self.data_dir
         #
-        img_name = '%s/%s' % (data_dir, key)
+        img_name = '%s/%s' % ('/tudelft.net/staff-bulk/ewi/insy/MMC/xinsheng/data/birds', key)
+        # img_name = '%s/%s' % ('X:/staff-bulk/ewi/insy/MMC/xinsheng/data/birds', key)
+        img_name = img_name.replace('\\','/')
         imgs = get_imgs(img_name, bbox, self.transform, normalize=self.norm)
         
         attrs = self.attributes[index]

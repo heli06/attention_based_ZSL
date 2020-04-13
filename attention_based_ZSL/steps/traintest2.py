@@ -45,28 +45,16 @@ def train2(image_model, att_model, relation_net, train_loader, test_seen_loader,
     image_trainables = [p for p in image_model.parameters() if p.requires_grad] # if p.requires_grad
     att_trainables = [p for p in att_model.parameters() if p.requires_grad]
     rel_trainables = [p for p in relation_net.parameters() if p.requires_grad]
-
+    trainables = image_trainables + att_trainables + rel_trainables
     if args.optim == 'sgd':
-        optimizer = torch.optim.SGD(att_trainables, args.lr_A,
+        optimizer = torch.optim.SGD(trainables, args.lr,
                                     momentum=args.momentum,
                                     weight_decay=args.weight_decay)
-        optimizer_img = torch.optim.SGD(image_trainables, args.lr_I,
-                                    momentum=args.momentum,
-                                    weight_decay=args.weight_decay)
-        optimizer_rel = torch.optim.SGD(rel_trainables, args.lr_R,
-                                        momentum=args.momentum,
-                                        weight_decay=args.weight_decay)
 
     elif args.optim == 'adam':
-        optimizer = torch.optim.Adam(att_trainables, args.lr_A,
+        optimizer = torch.optim.Adam(trainables, args.lr,
                                     weight_decay=args.weight_decay,
                                     betas=(0.95, 0.999))
-        optimizer_img = torch.optim.Adam(image_trainables, args.lr_I,
-                                    weight_decay=args.weight_decay,
-                                    betas=(0.95, 0.999))
-        optimizer_rel = torch.optim.Adam(rel_trainables, args.lr_R,
-                                         weight_decay=args.weight_decay,
-                                         betas=(0.95, 0.999))
     else:
         raise ValueError('Optimizer %s is not supported' % args.optim)
     
@@ -112,15 +100,19 @@ def train2(image_model, att_model, relation_net, train_loader, test_seen_loader,
     all_id = np.loadtxt(all_id_file, dtype=int)
     
     pre_acc = -1
+    all_att = torch.from_numpy(all_att)
+    all_att = all_att.float().to(device)
+    att_num = all_att.size()[0]
+    nor_all = normalizeFeature(all_att)
     while epoch<=500:
         epoch += 1
-        adjust_learning_rate(args.lr_A, args.lr_decay, optimizer, epoch)
-        adjust_learning_rate(args.lr_I, args.lr_decay, optimizer_img, epoch)
-        adjust_learning_rate(args.lr_R, args.lr_decay, optimizer_rel, epoch)
+        adjust_learning_rate(args.lr, args.lr_decay, optimizer, epoch)
         end_time = time.time()
         image_model.train()
         att_model.train()
         relation_net.train()
+        
+
 
         for i, (image_input, att_input, neg_att_input, cls_id, key, label) in enumerate(train_loader):
             att_input = att_input.float().to(device)   
@@ -131,61 +123,39 @@ def train2(image_model, att_model, relation_net, train_loader, test_seen_loader,
             image_input = image_input.squeeze(1)            
     
             optimizer.zero_grad()
-            optimizer_img.zero_grad()
-            optimizer_rel.zero_grad()
-
             final_image_output = None
             final_att_output = None
 
             # 输出图像特征向量和属性向量
             image_output = image_model(image_input)
-            # att_output = att_model(att_input)
-            att_output = att_input
-            # neg_att_output = att_model(neg_att_input)
-            neg_att_output = neg_att_input
-
-            image_output = F.normalize(image_output, p=2, dim=1)
-            att_output = F.normalize(att_output, p=2, dim=1)
-            neg_att_output = F.normalize(neg_att_output, p=2, dim=1)
-            pos_output = relation_net(torch.cat((image_output, att_output), dim=-1))
-            neg_output = relation_net(torch.cat((image_output, neg_att_output), dim=-1))
-            output = torch.cat((pos_output, neg_output), dim=0)
-
-            y1 = np.ones((args.batch_size,), dtype=np.float)
-            y1 = torch.from_numpy(y1).float().to(device)
-            y0 = np.zeros((args.batch_size,), dtype=np.float)
-            y0 = torch.from_numpy(y0).float().to(device)
-            y = torch.cat((y1, y0), dim=-1)
-
-                # print('--------------------------------------------------------------------')
-                # print('Best_zsl:', pre_acc)
-                # print('According_gzsl: seen=%.4f, unseen=%.4f, h=%.4f' % (pre_seen, pre_useen, pre_H))
-                
-
-            #print(image_input.size())
-            #print(att_input.size())
-            #print(image_output.size())
-            #print(att_output.size())
-            #torch.Size([20, 3, 244, 244])
-            #torch.Size([20, 312])
-            #torch.Size([20, 2048])
-            #torch.Size([20, 2048])
+            nor_att = normalizeFeature(att_input)    
+            all_att_out = att_model(all_att)
             
-            # pooling_ratio = round(audio_input.size(-1) / audio_output.size(-1))
-            # nframes.div_(pooling_ratio)
 
-            # loss = sampled_margin_rank_loss(image_output, audio_output,
-            #     nframes, margin=args.margin, simtype=args.simtype)
+
+            sim_mat = nor_att.mm(nor_all.t())
+            # conti_label = F.softmax(sim_mat)
+            new_label = sim_mat.argmax(dim=-1).long().to(device)
+            outputs = []
+            output_repeat = image_output.repeat_interleave(att_num,0)
+            all_att_out_repeat = all_att_out.repeat(B,1)
+            output = relation_net(torch.cat((output_repeat, all_att_out_repeat), dim=-1))
+            pred = output.view(B,-1)*args.smooth_gamma_r
+            """
+            for j in range(len(label)):
+                output_repeat = image_output[j, :].repeat(att_num, 1)
+                output = relation_net(torch.cat((output_repeat, all_att_out), dim=-1))
+                output = output.view(1,att_num)
+                outputs.append(output)
+            pred = torch.cat(outputs) 
+            """
+
+            loss = criterion_c(pred,new_label)
+            # pred = pred*50.0
+            # p0 = F.softmax(pred, dim=-1)
+            # loss = torch.sum(p0 * (F.log_softmax(pred, dim=-1) - F.log_softmax(conti_label, dim=-1)), 1).sum()
             
-            # loss = torch.pow(image_output - audio_output, 2).sum()
-            # loss = criterion(image_output , audio_output)
-            
-            
-            # image_output = normalizeFeature(image_output)
-            # audio_output = normalizeFeature(audio_output)
-            # neg_samples = normalizeFeature(neg_samples)
-            # loss_t = criterion(image_output,audio_output,neg_samples)
-            loss = 0
+            """
             if args.Loss_BCE:
                 loss = criterion_b(output, y)
             if args.Loss_CE:
@@ -210,13 +180,11 @@ def train2(image_model, att_model, relation_net, train_loader, test_seen_loader,
                 hinge_AII = criterion_hinge(att_output,image_output,neg_pair_image)
                 hinge_loss = hinge_AII + hinge_IAA
                 loss += hinge_loss*args.gamma_hinge
-
+            """
 
             loss.backward()
             optimizer.step()
-            optimizer_img.step()
-            optimizer_rel.step()
-            
+           
             # record loss
             loss_meter.update(loss.item(), B)
             batch_time.update(time.time() - end_time)
@@ -225,7 +193,7 @@ def train2(image_model, att_model, relation_net, train_loader, test_seen_loader,
                 print('epoch: %d | iteration = %d | loss = %f'
                       %(epoch, i, loss))
                 
-        if epoch % 2 == 0:
+        if epoch % 5 == 0:
             # train: (8821,)
             # trainval: (7057,)
             # test_seen: (1764,)
@@ -234,24 +202,32 @@ def train2(image_model, att_model, relation_net, train_loader, test_seen_loader,
             att_model.eval()
             relation_net.eval()
             acc_zsl = compute_accuracy(image_model, att_model, relation_net,
-                                       test_unseen_loader, test_att, test_id, args)
-            acc_seen_gzsl = compute_accuracy(image_model, att_model, relation_net,
+                                       test_unseen_loader, test_att, test_id, args)            
+                       
+            info = ' Epoch: [{0}] | Loss {loss_:.4f} | ACC {acc:.4f} \n'.format(epoch,loss_=loss,acc=acc_zsl)
+            print(info)
+            
+            save_path = os.path.join('outputs',args.save_file)
+            with open(save_path, "a") as file:
+                file.write(info)
+            
+            """
+            if acc_zsl > pre_acc:      
+                pre_acc = acc_zsl 
+                if epoch>20:
+                    acc_seen_gzsl = compute_accuracy(image_model, att_model, relation_net,
                                              test_seen_loader, all_att, all_id, args)
-            acc_unseen_gzsl = compute_accuracy(image_model, att_model, relation_net,
-                                               test_unseen_loader, all_att, all_id, args)
-            H = 2 * acc_seen_gzsl * acc_unseen_gzsl / (acc_seen_gzsl + acc_unseen_gzsl)
-            if acc_zsl > pre_acc:
-                pre_acc = acc_zsl
-                pre_seen = acc_seen_gzsl
-                pre_unseen = acc_unseen_gzsl
-                pre_epoch = epoch
-                pre_H = H
-
-            print('epoch: %d | itr: %d | zsl: ACC=%.4f | gzsl: seen=%.4f, unseen=%.4f, h=%.4f'
-                  % (epoch, i, acc_zsl, acc_seen_gzsl, acc_unseen_gzsl, H))
-            print('max acc: epoch: %d | itr: %d | zsl: ACC=%.4f | gzsl: seen=%.4f, unseen=%.4f, h=%.4f'
-                  % (pre_epoch, i, pre_acc, pre_seen, pre_unseen, pre_H))
-                
+                    acc_unseen_gzsl = compute_accuracy(image_model, att_model, relation_net,
+                                                    test_unseen_loader, all_att, all_id, args)
+                    H = 2 * acc_seen_gzsl * acc_unseen_gzsl / (acc_seen_gzsl + acc_unseen_gzsl)               
+                    
+                    pre_seen = acc_seen_gzsl
+                    pre_unseen = acc_unseen_gzsl
+                    pre_epoch = epoch
+                    pre_H = H                
+                    print('max acc: epoch: %d | itr: %d | zsl: ACC=%.4f | gzsl: seen=%.4f, unseen=%.4f, h=%.4f'
+                    % (pre_epoch, i, pre_acc, pre_seen, pre_unseen, pre_H))
+            """
 
 def compute_accuracy(image_model, att_model, relation_net, test_loader, test_att, test_id, args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -260,25 +236,16 @@ def compute_accuracy(image_model, att_model, relation_net, test_loader, test_att
     
     test_att = torch.from_numpy(test_att)
     test_att = test_att.float().to(device)
-    # test_att_output = att_model(test_att)
-    test_att_output = test_att
+    test_att_output = att_model(test_att)
     test_size = test_att_output.size()[0]
-
-    test_att_output = test_att_output / test_att_output.norm(dim=1, keepdim=True)
     
     for i, (image_input, att_input, cls_id, key, label) in enumerate(test_loader):
         att_input = att_input.float().to(device)
         label = list(label.numpy())
-        
         image_input = image_input.float().to(device)
         image_input = image_input.squeeze(1)
 
         image_output = image_model(image_input)
-        # att_output = att_model(att_input)
-        att_output = att_input
-
-        image_output = image_output / image_output.norm(dim=1, keepdim=True)
-        att_output = att_output / att_output.norm(dim=1, keepdim=True)
         
         for j in range(len(label)):
             output_repeat = image_output[j, :].repeat(test_size, 1)

@@ -32,22 +32,19 @@ parser.add_argument("--resume", action="store_true", default=True,
         help="load from exp_dir if True")
 parser.add_argument("--optim", type=str, default="adam",
         help="training optimizer", choices=["sgd", "adam"])
-parser.add_argument('--batch_size', '--batch_size', default=64, type=int,
+parser.add_argument('--batch_size', '--batch_size', default=128, type=int,
     metavar='N', help='mini-batch size (default: 100)')
 parser.add_argument('--workers',default=0,type=int,help='number of worker in the dataloader')
-parser.add_argument('--lr_A', '--learning-rate-attribute', default=0.001, type=float,
+parser.add_argument('--lr', '--learning-rate', default=0.001, type=float,
     metavar='LR', help='initial learning rate')
-parser.add_argument('--lr_I', '--learning-rate-image', default=0.001, type=float,
-    metavar='LR', help='initial learning rate')
-parser.add_argument('--lr_R', '--learning-rate-relation', default=0.001, type=float,
-    metavar='LR', help='initial learning rate')
-parser.add_argument('--lr-decay', default=100, type=int, metavar='LRDECAY',
+
+parser.add_argument('--lr-decay', default=20, type=int, metavar='LRDECAY',
     help='Divide the learning rate by 10 every lr_decay epochs')
 parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
     help='momentum')
-parser.add_argument('--weight-decay', '--wd', default=1e-3, type=float,
+parser.add_argument('--weight-decay', '--wd', default=1e-4, type=float,
     metavar='W', help='weight decay (default: 1e-4)')     #5e-7
-parser.add_argument("--n_epochs", type=int, default=100,
+parser.add_argument("--n_epochs", type=int, default=60,
         help="number of maximum training epochs")
 parser.add_argument('--CUDA',default=True, help='whether use GPU')
 parser.add_argument('--gpu_id',type = int, default= 0)
@@ -55,13 +52,15 @@ parser.add_argument('--manualSeed',type=int,default= 200, help='manual seed')
 parser.add_argument('--img_size',type=int,default = 244,help='image size')
 
 parser.add_argument('--att_DIM',type=int, default = 312)
-parser.add_argument('--att_hidDIM',type=int, default = 1600)
-parser.add_argument('--att_outDIM',type=int, default = 312)
+parser.add_argument('--att_hidDIM',type=int, default = 800)
+parser.add_argument('--att_outDIM',type=int, default = 1024)
 
-parser.add_argument('--img_outDIM',type=int, default = 2048)
+parser.add_argument('--img_outDIM',type=int, default = 1024)
 
 parser.add_argument('--rel_hidDIM',type=int, default = 72)
 
+parser.add_argument('--smooth_gamma_r',type=float,default=10.0)
+parser.add_argument('--save_file',type=str,default='result.text')
 parser.add_argument('--Loss_BCE',default = True)
 parser.add_argument('--Loss_CE',default = False)
 parser.add_argument('--Loss_cont',default = False)
@@ -73,7 +72,7 @@ parser.add_argument('--gamma_dist',default = 1.0)
 parser.add_argument('--Loss_hinge',default = False)
 parser.add_argument('--gamma_hinge',default = 1.0)
 
-parser.add_argument('--smooth_gamma',type=float,default=10)
+parser.add_argument('--smooth_gamma',type=float,default=10.0)
 
 # 新增加的载入ZSL和GZSL文件的参数
 parser.add_argument('--train_class_id',default = 'train_class_id.txt')
@@ -117,16 +116,19 @@ image_transform = transforms.Compose([
     transforms.Resize(int(imsize * 76 / 64)),
     transforms.RandomCrop(imsize),
     transforms.RandomHorizontalFlip()])
+image_transform_test = transforms.Compose([
+        transforms.Resize(imsize),
+        transforms.CenterCrop(imsize)])
 
 
 dataset_train = ZSLDataset(args.data_path, args,'train_neg',
                         transform=image_transform)
 
 dataset_test_seen = ZSLDataset(args.data_path, args,'test_seen',                        
-                        transform=image_transform)
+                        transform=image_transform_test)
 
 dataset_test = ZSLDataset(args.data_path, args,'test',                        
-                        transform=image_transform)
+                        transform=image_transform_test)
 
 # dataset_train.len 7051
 # dataset_test_seen 1770

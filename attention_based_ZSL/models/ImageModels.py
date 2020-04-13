@@ -47,13 +47,13 @@ class Resnet101(nn.Module):
         self.layer4 = model.layer4
         self.avgpool = model.avgpool
         
-        self.fc1 = nn.Linear(2048,2048)
-        self.fc2 = nn.Linear(2048,2048)
+        self.fc1 = nn.Linear(2048,1024)
+        # self.fc2 = nn.Linear(2048,2048)
 
     def init_trainable_weights(self):
         initrange = 0.1   
         self.fc1.weight.data.uniform_(-initrange, initrange)
-        self.fc2.weight.data.uniform_(-initrange, initrange)
+        # self.fc2.weight.data.uniform_(-initrange, initrange)
 
     def forward(self, x):
         x = nn.functional.interpolate(x,size=(244, 244), mode='bilinear', align_corners=False)
@@ -76,9 +76,10 @@ class Resnet101(nn.Module):
         # torch.Size([1, 2048, 1, 1])
         x = x.view(x.size(0), -1)
         x = self.fc1(x)
-        x = F.relu(x)
-        x = self.fc2(x)
-        return x
+        # x = F.relu(x)
+        # x = self.fc2(x)
+
+        return nn.functional.normalize(x, p=2, dim=1)
 
 class ImgDecoder(nn.Module):
     def __init__(self,args):

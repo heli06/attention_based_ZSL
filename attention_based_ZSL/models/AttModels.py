@@ -18,7 +18,7 @@ class AttEncoder(nn.Module):
         x = self.fc1(input)
         x = F.relu(x)
         x = self.fc2(x)
-        return x
+        return nn.functional.normalize(x, p=2, dim=1)
 
 class AttDecoder(nn.Module):
     def __init__(self,args):
