@@ -14,12 +14,12 @@ from dataloaders.dataset import ZSLDataset
 from models import ImageModels, AttModels, ImageModels2
 from models import ModalityClassifier, ModalityTransformer, Attention
 from models import RelationNet
-from steps import traintest2
+from steps import traintest3
 import torchvision.transforms as transforms 
 import scipy.io as sio
 
 # 指定使用的显卡，选利用率低的
-os.environ['CUDA_VISIBLE_DEVICES']='2'
+os.environ['CUDA_VISIBLE_DEVICES']='0, 1, 2, 3'
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 #'/media/shawn/data/Data/birds'
@@ -32,7 +32,7 @@ parser.add_argument("--resume", action="store_true", default=True,
         help="load from exp_dir if True")
 parser.add_argument("--optim", type=str, default="adam",
         help="training optimizer", choices=["sgd", "adam"])
-parser.add_argument('--batch_size', '--batch_size', default=128, type=int,
+parser.add_argument('--batch_size', '--batch_size', default=32, type=int,
     metavar='N', help='mini-batch size (default: 100)')
 parser.add_argument('--workers',default=0,type=int,help='number of worker in the dataloader')
 parser.add_argument('--lr', '--learning-rate', default=1e-4, type=float,
@@ -59,8 +59,12 @@ parser.add_argument('--img_outDIM',type=int, default = 1024)
 
 parser.add_argument('--rel_hidDIM',type=int, default = 72)
 
+parser.add_argument('--attn_embedDIM',type=int, default = 128)
+
 parser.add_argument('--smooth_gamma_r',type=float,default=40.0)
 parser.add_argument('--save_file',type=str,default='result.text')
+parser.add_argument('--Loss_Attn',default = True)
+parser.add_argument('--gamma_attn',default = 0.1)
 parser.add_argument('--Loss_BCE',default = False)
 parser.add_argument('--Loss_CE',default = False)
 parser.add_argument('--Loss_cont',default = False)
@@ -73,6 +77,11 @@ parser.add_argument('--Loss_hinge',default = False)
 parser.add_argument('--gamma_hinge',default = 1.0)
 
 parser.add_argument('--smooth_gamma',type=float,default=10.0)
+
+# attn_gamma
+parser.add_argument('--attn_gamma_1',type=float, default=5.0)
+parser.add_argument('--attn_gamma_2',type=float, default=5.0)
+parser.add_argument('--attn_gamma_3',type=float, default=10.0)
 
 # 新增加的载入ZSL和GZSL文件的参数
 parser.add_argument('--train_class_id',default = 'train_class_id.txt')
@@ -157,7 +166,6 @@ test_unseen_loader = torch.utils.data.DataLoader(
 
 image_model = ImageModels.Resnet101()
 # image_model = ImageModels2.Resnet101()
-att_model = AttModels.AttEncoder(args)
-relation_net = RelationNet.RelationNet(args)
+att_model = AttModels.GRU(args)
 
-traintest2.train2(image_model, att_model, relation_net, train_loader, test_seen_loader, test_unseen_loader, args)
+traintest3.train3(image_model, att_model, Attention, train_loader, test_seen_loader, test_unseen_loader, args)

@@ -2,14 +2,16 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="687a500e-a7df-4bb7-a36a-9c1264655dbb" name="Default" comment="">
+      <change afterPath="$PROJECT_DIR$/attention_based_ZSL/Run_40.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/attention_based_ZSL/models/back.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/attention_based_ZSL/run3.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/attention_based_ZSL/steps/traintest3.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Bird_for_ZSL/Data_PreProcessing.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/Bird_for_ZSL/Data_PreProcessing.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Bird_for_ZSL/test_class_attribute_labels_continuous.txt" beforeDir="false" afterPath="$PROJECT_DIR$/Bird_for_ZSL/test_class_attribute_labels_continuous.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/attention_based_ZSL/dataloaders/dataset.py" beforeDir="false" afterPath="$PROJECT_DIR$/attention_based_ZSL/dataloaders/dataset.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/attention_based_ZSL/models/AttModels.py" beforeDir="false" afterPath="$PROJECT_DIR$/attention_based_ZSL/models/AttModels.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/attention_based_ZSL/models/ModalityClassifier.py" beforeDir="false" afterPath="$PROJECT_DIR$/attention_based_ZSL/models/ModalityClassifier.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/attention_based_ZSL/models/RelationNet.py" beforeDir="false" afterPath="$PROJECT_DIR$/attention_based_ZSL/models/RelationNet.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/attention_based_ZSL/run.py" beforeDir="false" afterPath="$PROJECT_DIR$/attention_based_ZSL/run.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/attention_based_ZSL/models/Attention.py" beforeDir="false" afterPath="$PROJECT_DIR$/attention_based_ZSL/models/Attention.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/attention_based_ZSL/models/ImageModels.py" beforeDir="false" afterPath="$PROJECT_DIR$/attention_based_ZSL/models/ImageModels.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/attention_based_ZSL/outputs/result.text" beforeDir="false" afterPath="$PROJECT_DIR$/attention_based_ZSL/outputs/result.text" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/attention_based_ZSL/run2.py" beforeDir="false" afterPath="$PROJECT_DIR$/attention_based_ZSL/run2.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/attention_based_ZSL/steps/traintest2.py" beforeDir="false" afterPath="$PROJECT_DIR$/attention_based_ZSL/steps/traintest2.py" afterDir="false" />
     </list>
@@ -22,65 +24,42 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="RelationNet.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/attention_based_ZSL/models/RelationNet.py">
+      <file leaf-file-name="run3.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/attention_based_ZSL/run3.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="266">
-              <caret line="19" column="23" selection-start-line="19" selection-start-column="23" selection-end-line="19" selection-end-column="23" />
+            <state relative-caret-position="2">
+              <caret line="149" column="19" lean-forward="true" selection-start-line="149" selection-start-column="19" selection-end-line="149" selection-end-column="19" />
+              <folding>
+                <element signature="e#0#15#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="AttModels.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/attention_based_ZSL/models/AttModels.py">
+      <file leaf-file-name="Attention.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/attention_based_ZSL/models/Attention.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="342">
-              <caret line="23" column="28" selection-start-line="23" selection-start-column="28" selection-end-line="23" selection-end-column="28" />
+            <state relative-caret-position="770">
+              <caret line="196" column="5" selection-start-line="196" selection-start-column="5" selection-end-line="196" selection-end-column="5" />
+              <folding>
+                <element signature="e#0#12#0" expanded="true" />
+                <element signature="e#302#3842#0" />
+                <element signature="e#3875#4367#0" />
+              </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="traintest2.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/attention_based_ZSL/steps/traintest2.py">
+      <file leaf-file-name="traintest3.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/attention_based_ZSL/steps/traintest3.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1843">
-              <caret line="236" column="87" selection-start-line="236" selection-start-column="87" selection-end-line="236" selection-end-column="87" />
+            <state relative-caret-position="38">
+              <caret line="152" column="62" selection-start-line="152" selection-start-column="62" selection-end-line="152" selection-end-column="62" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
+                <element signature="e#14652#16936#0" />
+                <element signature="e#15396#16916#0" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="run2.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/attention_based_ZSL/run2.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="817">
-              <caret line="64" column="34" selection-start-line="64" selection-start-column="34" selection-end-line="64" selection-end-column="34" />
-              <folding>
-                <element signature="e#0#15#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="run.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/attention_based_ZSL/run.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="532">
-              <caret line="45" column="70" selection-start-line="45" selection-start-column="70" selection-end-line="45" selection-end-column="70" />
-              <folding>
-                <element signature="e#0#15#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="ImageModels2.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/attention_based_ZSL/models/ImageModels2.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1254">
-              <caret line="71" column="14" selection-start-line="71" selection-start-column="14" selection-end-line="71" selection-end-column="14" />
             </state>
           </provider>
         </entry>
@@ -96,37 +75,43 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>device</find>
-      <find>memory_fusion</find>
-      <find>loss</find>
-      <find>batch_size</find>
-      <find>AttModels</find>
-      <find>unused</find>
+      <find>lr-decay</find>
+      <find>adjust</find>
+      <find>lr_decay</find>
+      <find>weight_decay</find>
       <find>weight-decay</find>
-      <find>Adv_loss</find>
-      <find>mt</find>
-      <find>memory</find>
-      <find>out_DIM</find>
-      <find>neg_pair_att</find>
-      <find>audio_output</find>
-      <find>criterion_hinge</find>
-      <find>rain_id</find>
-      <find>relation_net</find>
-      <find>all_att</find>
-      <find>torch.cat</find>
-      <find>repeat</find>
-      <find>pre_epoch</find>
-      <find>pre_acc</find>
-      <find>att_model</find>
-      <find>train_att</find>
-      <find>relation_pairs</find>
-      <find>test_label</find>
-      <find>normalize</find>
-      <find>Loss_MSE</find>
+      <find>最大</find>
+      <find>all</find>
+      <find>cosi</find>
+      <find>Cosin</find>
+      <find>permute</find>
+      <find>train_class_attr</find>
+      <find>200</find>
       <find>train</find>
+      <find>image_model</find>
+      <find>eval</find>
+      <find>att_model</find>
       <find>squeeze</find>
-      <find>print</find>
+      <find>device</find>
+      <find>repeat</find>
+      <find>cuda</find>
+      <find>attention_loss</find>
+      <find>similarity</find>
+      <find>gamma1</find>
+      <find>opt</find>
+      <find>captions</find>
+      <find>row_sim</find>
+      <find>projnet</find>
+      <find>proj_net</find>
+      <find>cosine_similarity</find>
+      <find>gru_pred</find>
     </findStrings>
+    <replaceStrings>
+      <replace>attn</replace>
+      <replace>args</replace>
+      <replace>attributes</replace>
+      <replace>sim</replace>
+    </replaceStrings>
     <dirStrings>
       <dir>D:\ML_CV\PrivateProject\attention_based_ZSL</dir>
       <dir>D:\ML_CV\PrivateProject\attention_based_ZSL\attention_based_ZSL</dir>
@@ -142,27 +127,38 @@
         <option value="$PROJECT_DIR$/attention_based_ZSL/bayes.py" />
         <option value="$PROJECT_DIR$/attention_based_ZSL/models/Memory.py" />
         <option value="$PROJECT_DIR$/attention_based_ZSL/models/ModalityTransformer.py" />
-        <option value="$PROJECT_DIR$/attention_based_ZSL/models/Attention.py" />
         <option value="$PROJECT_DIR$/attention_based_ZSL/models/ImageModels2.py" />
         <option value="$PROJECT_DIR$/attention_based_ZSL/steps/traintest.py" />
         <option value="$PROJECT_DIR$/attention_based_ZSL/try.py" />
         <option value="$PROJECT_DIR$/attention_based_ZSL/models/ModalityClassifier.py" />
         <option value="$PROJECT_DIR$/attention_based_ZSL/run.py" />
-        <option value="$PROJECT_DIR$/attention_based_ZSL/models/ImageModels.py" />
-        <option value="$PROJECT_DIR$/attention_based_ZSL/dataloaders/dataset.py" />
         <option value="$PROJECT_DIR$/attention_based_ZSL/homework.py" />
-        <option value="$PROJECT_DIR$/attention_based_ZSL/run2.py" />
         <option value="$PROJECT_DIR$/attention_based_ZSL/models/RelationNet.py" />
+        <option value="$PROJECT_DIR$/attention_based_ZSL/dataloaders/dataset.py" />
+        <option value="$PROJECT_DIR$/attention_based_ZSL/Run_40.sh" />
+        <option value="$PROJECT_DIR$/attention_based_ZSL/Run_60.sh" />
+        <option value="$PROJECT_DIR$/attention_based_ZSL/outputs/lr_1e-4.text" />
+        <option value="$PROJECT_DIR$/attention_based_ZSL/models/ImageModels.py" />
+        <option value="$PROJECT_DIR$/attention_based_ZSL/outputs/lr_decay60.text" />
+        <option value="$PROJECT_DIR$/attention_based_ZSL/outputs/lr_decay30.text" />
+        <option value="$PROJECT_DIR$/attention_based_ZSL/outputs/weight-decay-5.text" />
+        <option value="$PROJECT_DIR$/attention_based_ZSL/run2.py" />
         <option value="$PROJECT_DIR$/attention_based_ZSL/steps/traintest2.py" />
+        <option value="$PROJECT_DIR$/attention_based_ZSL/outputs/train_att.text" />
+        <option value="$PROJECT_DIR$/attention_based_ZSL/steps/gpu_balance.py" />
         <option value="$PROJECT_DIR$/attention_based_ZSL/models/AttModels.py" />
+        <option value="$PROJECT_DIR$/attention_based_ZSL/run3.py" />
+        <option value="$PROJECT_DIR$/attention_based_ZSL/models/Attention.py" />
+        <option value="$PROJECT_DIR$/attention_based_ZSL/models/back.py" />
+        <option value="$PROJECT_DIR$/attention_based_ZSL/steps/traintest3.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="-12" />
-    <option name="y" value="-12" />
-    <option name="width" value="984" />
-    <option name="height" value="1044" />
+    <option name="x" value="-11" />
+    <option name="y" value="-11" />
+    <option name="width" value="1943" />
+    <option name="height" value="1043" />
   </component>
   <component name="ProjectView">
     <navigator proportions="" version="1">
@@ -185,19 +181,7 @@
               <item name="attention_based_ZSL" type="b2602c69:ProjectViewProjectNode" />
               <item name="attention_based_ZSL" type="462c0819:PsiDirectoryNode" />
               <item name="attention_based_ZSL" type="462c0819:PsiDirectoryNode" />
-              <item name="dataloaders" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="attention_based_ZSL" type="b2602c69:ProjectViewProjectNode" />
-              <item name="attention_based_ZSL" type="462c0819:PsiDirectoryNode" />
-              <item name="attention_based_ZSL" type="462c0819:PsiDirectoryNode" />
               <item name="models" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="attention_based_ZSL" type="b2602c69:ProjectViewProjectNode" />
-              <item name="attention_based_ZSL" type="462c0819:PsiDirectoryNode" />
-              <item name="attention_based_ZSL" type="462c0819:PsiDirectoryNode" />
-              <item name="steps" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
@@ -207,7 +191,7 @@
     </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../back" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PythonContentEntriesConfigurable" />
   </component>
   <component name="RecentsManager">
@@ -228,7 +212,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.homework">
+  <component name="RunManager" selected="Python.run2">
     <configuration name="GAN_code" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="attention_based_ZSL" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -283,6 +267,24 @@
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
     </configuration>
+    <configuration name="run2" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="attention_based_ZSL" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/attention_based_ZSL" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/attention_based_ZSL/run2.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+    </configuration>
     <configuration name="try" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="attention_based_ZSL" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -306,9 +308,11 @@
       <item itemvalue="Python.try" />
       <item itemvalue="Python.GAN_code" />
       <item itemvalue="Python.homework" />
+      <item itemvalue="Python.run2" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.run2" />
         <item itemvalue="Python.homework" />
         <item itemvalue="Python.try" />
         <item itemvalue="Python.GAN_code" />
@@ -330,17 +334,17 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-7" y="-7" width="655" height="695" extended-state="0" />
+    <frame x="-7" y="-7" width="1295" height="695" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" weight="0.2324493" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.20686963" />
       <window_info anchor="bottom" id="TODO" order="6" />
-      <window_info anchor="bottom" id="Event Log" order="7" side_tool="true" weight="0.32879046" />
-      <window_info anchor="bottom" id="Version Control" order="7" />
+      <window_info anchor="bottom" id="Event Log" order="10" side_tool="true" weight="0.32879046" />
+      <window_info anchor="bottom" id="Version Control" order="9" />
       <window_info anchor="bottom" id="Python Console" order="7" />
       <window_info anchor="bottom" id="Run" order="2" weight="0.36115843" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
-      <window_info anchor="bottom" id="Terminal" order="7" />
+      <window_info anchor="bottom" id="Terminal" order="8" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
@@ -351,294 +355,15 @@
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Find" order="1" />
     </layout>
-    <layout-to-restore>
-      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.36115843" />
-      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.2324493" />
-      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
-      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
-      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
-      <window_info anchor="bottom" id="TODO" order="6" />
-      <window_info anchor="bottom" id="Find" order="1" />
-      <window_info anchor="bottom" id="Python Console" order="7" />
-      <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
-      <window_info anchor="bottom" id="Terminal" order="8" />
-      <window_info anchor="bottom" id="Event Log" order="9" side_tool="true" weight="0.32879046" />
-      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
-      <window_info anchor="bottom" id="Version Control" order="10" />
-      <window_info anchor="bottom" id="Message" order="0" />
-      <window_info id="Favorites" order="2" side_tool="true" />
-    </layout-to-restore>
   </component>
   <component name="VcsContentAnnotationSettings">
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/models/ImageModels.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="456">
-          <caret line="29" column="12" selection-start-line="29" selection-start-column="12" selection-end-line="29" selection-end-column="12" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/models/ModalityClassifier.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="95">
-          <caret line="10" column="13" selection-start-line="10" selection-start-column="13" selection-end-line="10" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/steps/traintest.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3059">
-          <caret line="170" column="21" lean-forward="true" selection-start-line="170" selection-start-column="21" selection-end-line="170" selection-end-column="21" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/models/Attention.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="874">
-          <caret line="53" column="33" selection-start-line="53" selection-start-column="33" selection-end-line="53" selection-end-column="33" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/run.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="646">
-          <caret line="50" column="54" selection-start-line="50" selection-start-column="54" selection-end-line="50" selection-end-column="54" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/models/Attention.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="874">
-          <caret line="53" column="39" lean-forward="true" selection-start-line="53" selection-start-column="39" selection-end-line="53" selection-end-column="39" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/models/ModalityClassifier.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="95">
-          <caret line="10" column="13" selection-start-line="10" selection-start-column="13" selection-end-line="10" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/steps/traintest.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2945">
-          <caret line="164" column="18" selection-start-line="164" selection-start-column="18" selection-end-line="164" selection-end-column="18" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/run.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="950">
-          <caret line="50" column="54" selection-start-line="50" selection-start-column="54" selection-end-line="50" selection-end-column="54" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/steps/traintest.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="4218">
-          <caret line="222" column="26" selection-start-line="222" selection-start-column="26" selection-end-line="222" selection-end-column="26" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/run.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="285">
-          <caret line="31" column="62" selection-start-line="31" selection-start-column="62" selection-end-line="31" selection-end-column="62" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/steps/traintest.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3249">
-          <caret line="180" column="66" lean-forward="true" selection-start-line="180" selection-start-column="66" selection-end-line="180" selection-end-column="66" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/run.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="589">
-          <caret line="31" column="62" selection-start-line="31" selection-start-column="62" selection-end-line="31" selection-end-column="62" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/try.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="399">
-          <caret line="37" column="24" selection-start-line="37" selection-start-column="24" selection-end-line="37" selection-end-column="24" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/steps/traintest.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2071">
-          <caret line="118" column="44" selection-start-line="118" selection-start-column="44" selection-end-line="118" selection-end-column="44" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/models/AttModels.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="152">
-          <caret line="13" column="46" selection-start-line="13" selection-start-column="46" selection-end-line="13" selection-end-column="46" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://D:/现在研究方向和相关论文/尝试复现/GAN_code.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="57">
-          <caret line="13" column="27" selection-start-line="13" selection-start-column="27" selection-end-line="13" selection-end-column="27" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/run.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="285">
-          <caret line="31" column="62" selection-start-line="31" selection-start-column="62" selection-end-line="31" selection-end-column="62" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/try.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="399">
-          <caret line="37" column="24" selection-start-line="37" selection-start-column="24" selection-end-line="37" selection-end-column="24" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/steps/traintest.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2071">
-          <caret line="118" column="44" selection-start-line="118" selection-start-column="44" selection-end-line="118" selection-end-column="44" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/models/AttModels.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="152">
-          <caret line="13" column="46" selection-start-line="13" selection-start-column="46" selection-end-line="13" selection-end-column="46" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://D:/现在研究方向和相关论文/尝试复现/GAN_code.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="57">
-          <caret line="13" column="27" selection-start-line="13" selection-start-column="27" selection-end-line="13" selection-end-column="27" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/run.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="589">
-          <caret line="31" column="62" selection-start-line="31" selection-start-column="62" selection-end-line="31" selection-end-column="62" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/steps/traintest.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2242">
-          <caret line="118" column="44" selection-start-line="118" selection-start-column="44" selection-end-line="118" selection-end-column="44" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/models/AttModels.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="247">
-          <caret line="13" column="46" selection-start-line="13" selection-start-column="46" selection-end-line="13" selection-end-column="46" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/try.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="703">
-          <caret line="37" column="24" selection-start-line="37" selection-start-column="24" selection-end-line="37" selection-end-column="24" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/run.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="285">
-          <caret line="31" column="62" selection-start-line="31" selection-start-column="62" selection-end-line="31" selection-end-column="62" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/steps/traintest.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2071">
-          <caret line="118" column="44" selection-start-line="118" selection-start-column="44" selection-end-line="118" selection-end-column="44" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/models/AttModels.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="152">
-          <caret line="13" column="46" selection-start-line="13" selection-start-column="46" selection-end-line="13" selection-end-column="46" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/try.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="399">
-          <caret line="37" column="24" lean-forward="true" selection-start-line="37" selection-start-column="24" selection-end-line="37" selection-end-column="24" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/run.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="304">
-          <caret line="16" column="17" lean-forward="true" selection-start-line="16" selection-start-column="17" selection-end-line="16" selection-end-column="17" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://D:/现在研究方向和相关论文/尝试复现/GAN_code.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1862">
-          <caret line="13" column="27" selection-start-line="13" selection-start-column="27" selection-end-line="13" selection-end-column="27" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/bayes.py" />
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/models/ModalityTransformer.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="209">
-          <caret line="16" column="31" selection-start-line="16" selection-start-column="31" selection-end-line="16" selection-end-column="31" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://D:/Anaconda3/envs/mlcc/Lib/site-packages/sklearn/metrics/classification.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="19">
-          <caret line="114" column="4" selection-start-line="114" selection-start-column="4" selection-end-line="114" selection-end-column="4" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/steps/util.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1102">
-          <caret line="64" column="25" selection-start-line="64" selection-start-column="25" selection-end-line="64" selection-end-column="25" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/try.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="208">
-          <caret line="16" column="12" lean-forward="true" selection-start-line="16" selection-start-column="12" selection-end-line="16" selection-end-column="12" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/attention_based_ZSL/models/ModalityClassifier.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="95">
           <caret line="10" column="44" selection-start-line="10" selection-start-column="44" selection-end-line="10" selection-end-column="44" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/models/Attention.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="254">
-          <caret line="23" column="40" lean-forward="true" selection-start-line="23" selection-start-column="40" selection-end-line="23" selection-end-column="40" />
         </state>
       </provider>
     </entry>
@@ -650,20 +375,6 @@
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/attention_based_ZSL/homework.py" />
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/steps/kNN.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="211">
-          <caret line="46" column="52" selection-start-line="46" selection-start-column="52" selection-end-line="46" selection-end-column="52" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/models/ImageModels.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1577">
-          <caret line="88" column="21" selection-start-line="88" selection-start-column="21" selection-end-line="88" selection-end-column="21" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/attention_based_ZSL/models/ImageModels2.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1254">
@@ -671,60 +382,282 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/steps/traintest.py">
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/Run_20.sh">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/Run_5.sh">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="5455">
-          <caret line="398" column="41" selection-start-line="398" selection-start-column="34" selection-end-line="398" selection-end-column="41" />
+        <state relative-caret-position="95">
+          <caret line="5" column="13" selection-start-line="5" selection-start-column="13" selection-end-line="5" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/Run_15.sh">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/Run_60.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="190">
+          <caret line="10" column="32" selection-start-line="10" selection-start-column="32" selection-end-line="10" selection-end-column="32" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/outputs/smooth_20.text">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="57">
+          <caret line="3" column="36" lean-forward="true" selection-start-line="3" selection-start-column="36" selection-end-line="3" selection-end-column="36" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$APPLICATION_HOME_DIR$/helpers/typeshed/stdlib/2and3/argparse.pyi">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="191">
+          <caret line="70" column="16" lean-forward="true" selection-start-line="70" selection-end-line="71" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/outputs/result.text">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/Run_40.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="228">
+          <caret line="12" column="109" selection-start-line="12" selection-start-column="109" selection-end-line="12" selection-end-column="109" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/outputs/smooth_50.text">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="57">
+          <caret line="3" column="40" lean-forward="true" selection-start-line="3" selection-start-column="40" selection-end-line="3" selection-end-column="40" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/outputs/lr_decay20.text" />
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/outputs/smooth_45.text">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/outputs/smooth_30.text">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/models/RelationNet.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="285">
+          <caret line="20" column="16" lean-forward="true" selection-start-line="20" selection-start-column="16" selection-end-line="20" selection-end-column="16" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/steps/kNN.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="855">
+          <caret line="46" column="52" selection-start-line="46" selection-start-column="52" selection-end-line="46" selection-end-column="52" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/outputs/lr_decay10.text">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="95">
+          <caret line="5" column="17" selection-start-line="5" selection-start-column="17" selection-end-line="5" selection-end-column="17" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/outputs/lr_decay100.text">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="247">
+          <caret line="13" column="21" selection-start-line="13" selection-start-column="21" selection-end-line="13" selection-end-column="21" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/outputs/lr_decay80.text">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="399">
+          <caret line="21" column="41" lean-forward="true" selection-start-line="21" selection-start-column="41" selection-end-line="21" selection-end-column="41" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/outputs/lr_decay40.text">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/outputs/lr_decay50.text">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="38">
+          <caret line="2" lean-forward="true" selection-start-line="2" selection-end-line="2" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/outputs/lr_decay30.text">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="475">
+          <caret line="25" column="43" selection-start-line="25" selection-start-column="43" selection-end-line="25" selection-end-column="43" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/outputs/lr_1e-5.text">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/outputs/lr_1e-2.text">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/outputs/smooth_40.text">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="38">
+          <caret line="2" column="35" selection-start-line="2" selection-start-column="35" selection-end-line="2" selection-end-column="35" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/outputs/lr_1e-4.text">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="323">
+          <caret line="17" column="40" lean-forward="true" selection-start-line="17" selection-start-column="40" selection-end-line="17" selection-end-column="40" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/attention_based_ZSL/run.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="532">
+        <state relative-caret-position="-50">
           <caret line="45" column="70" selection-start-line="45" selection-start-column="70" selection-end-line="45" selection-end-column="70" />
-          <folding>
-            <element signature="e#0#15#0" expanded="true" />
-          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/outputs/smooth_60.text">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/outputs/lr_decay60.text">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="292">
+          <caret line="23" column="41" lean-forward="true" selection-start-line="23" selection-start-column="41" selection-end-line="23" selection-end-column="41" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/outputs/train_att.text">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="293">
+          <caret line="21" column="43" selection-start-line="21" selection-start-column="43" selection-end-line="21" selection-end-column="43" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/outputs/weight-decay-3.text">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="190">
+          <caret line="10" column="40" lean-forward="true" selection-start-line="10" selection-start-column="40" selection-end-line="10" selection-end-column="40" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/outputs/weight-decay-5.text">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret column="25" lean-forward="true" selection-start-column="25" selection-end-column="25" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/attention_based_ZSL/dataloaders/dataset.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-134">
-          <caret line="91" column="40" lean-forward="true" selection-start-line="91" selection-start-column="40" selection-end-line="91" selection-end-column="40" />
+        <state relative-caret-position="741">
+          <caret line="154" selection-start-line="154" selection-end-line="154" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/models/RelationNet.py">
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/steps/util.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="266">
-          <caret line="19" column="23" selection-start-line="19" selection-start-column="23" selection-end-line="19" selection-end-column="23" />
+        <state relative-caret-position="2166">
+          <caret line="189" column="23" lean-forward="true" selection-start-line="189" selection-start-column="23" selection-end-line="189" selection-end-column="23" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/models/AttModels.py">
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/steps/gpu_balance.py" />
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/models/ImageModels.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="342">
-          <caret line="23" column="28" selection-start-line="23" selection-start-column="28" selection-end-line="23" selection-end-column="28" />
+        <state relative-caret-position="154">
+          <caret line="82" column="59" selection-start-line="82" selection-start-column="59" selection-end-line="82" selection-end-column="59" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/steps/encoding.py" />
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/steps/traintest.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-6935">
+          <caret line="13" column="31" selection-start-line="13" selection-start-column="27" selection-end-line="13" selection-end-column="31" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/outputs/attn_loss.text">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/outputs/batch_16.text">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/outputs/batch_128.text">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-855" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/outputs/attn.text">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-1425" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/steps/traintest2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2413">
+          <caret line="172" column="38" selection-start-line="172" selection-start-column="38" selection-end-line="172" selection-end-column="38" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/models/back.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="38">
+          <caret line="137" column="3" selection-start-line="137" selection-start-column="3" selection-end-line="137" selection-end-column="3" />
+          <folding>
+            <element signature="e#36#3466#0" />
+            <element signature="e#3472#4743#1" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/attention_based_ZSL/run2.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="817">
-          <caret line="64" column="34" selection-start-line="64" selection-start-column="34" selection-end-line="64" selection-end-column="34" />
+        <state relative-caret-position="496">
+          <caret line="160" column="30" selection-start-line="160" selection-start-column="30" selection-end-line="160" selection-end-column="30" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/models/AttModels.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="703">
+          <caret line="42" column="24" selection-start-line="42" selection-start-column="24" selection-end-line="42" selection-end-column="24" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/run3.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2">
+          <caret line="149" column="19" lean-forward="true" selection-start-line="149" selection-start-column="19" selection-end-line="149" selection-end-column="19" />
           <folding>
             <element signature="e#0#15#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/steps/traintest2.py">
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/steps/traintest3.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1843">
-          <caret line="236" column="87" selection-start-line="236" selection-start-column="87" selection-end-line="236" selection-end-column="87" />
+        <state relative-caret-position="38">
+          <caret line="152" column="62" selection-start-line="152" selection-start-column="62" selection-end-line="152" selection-end-column="62" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
+            <element signature="e#14652#16936#0" />
+            <element signature="e#15396#16916#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/attention_based_ZSL/models/Attention.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="770">
+          <caret line="196" column="5" selection-start-line="196" selection-start-column="5" selection-end-line="196" selection-end-column="5" />
+          <folding>
+            <element signature="e#0#12#0" expanded="true" />
+            <element signature="e#302#3842#0" />
+            <element signature="e#3875#4367#0" />
           </folding>
         </state>
       </provider>

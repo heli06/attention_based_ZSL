@@ -99,3 +99,103 @@ class MultiHeadAttention(nn.Module):
         x = x.permute(0, 2, 1, 3)
         x_shape = x.size()
         return x.reshape(list(x_shape[:-3]) + [self.num_heads * x_shape[-1]])
+
+class ProjNet(nn.Module):
+    def __init__(self, args):
+        super(ProjNet, self).__init__()
+        self.localFc = nn.Linear(args.img_outDIM, args.attn_embedDIM)
+        self.globalFc = nn.Linear(args.img_outDIM, args.attn_embedDIM)
+
+    def forward(self, local_img, global_img):
+        local_img = local_img.view(local_img.size(0), local_img.size(1), -1).permute(0, 2, 1)
+        local_img = self.localFc(local_img).permute(0, 2, 1)
+        global_img = self.globalFc(global_img)
+        return local_img, global_img
+
+# att_features batch_size*150, 312, 128
+# image_features batch_size*150, 128, 256
+# d 128
+def func_attention(query, context, args):
+    """
+    query: (n_context, queryL, d)
+    context: (n_context, sourceL, d)
+    """
+    context = context.transpose(1, 2)
+    smooth = args.lambda_softmax
+
+    batch_size_q, queryL = query.size(0), query.size(1)
+    batch_size, sourceL = context.size(0), context.size(1)
+
+    # Get attention
+    # --> (batch, d, queryL)
+    queryT = torch.transpose(query, 1, 2)
+
+    # (batch, sourceL, d)(batch, d, queryL)
+    # --> (batch, sourceL, queryL)
+    attn = torch.bmm(context, queryT)
+
+    # --> (batch*sourceL, queryL)
+    attn = attn.view(batch_size*sourceL, queryL)
+    attn = nn.Softmax()(attn)
+    # --> (batch, sourceL, queryL)
+    attn = attn.view(batch_size, sourceL, queryL)
+
+    # --> (batch, queryL, sourceL)
+    attn = torch.transpose(attn, 1, 2).contiguous()
+    # --> (batch*queryL, sourceL)
+    attn = attn.view(batch_size*queryL, sourceL)
+    attn = nn.Softmax()(attn*smooth)
+    # --> (batch, queryL, sourceL)
+    attn = attn.view(batch_size, queryL, sourceL)
+    # --> (batch, sourceL, queryL)
+    attnT = torch.transpose(attn, 1, 2).contiguous()
+
+    # --> (batch, d, sourceL)
+    contextT = torch.transpose(context, 1, 2)
+    # (batch x d x sourceL)(batch x sourceL x queryL)
+    # --> (batch, d, queryL)
+    weightedContext = torch.bmm(contextT, attnT)
+    # --> (batch, queryL, d)
+    weightedContext = torch.transpose(weightedContext, 1, 2)
+
+    return weightedContext, attnT
+
+def cosine_similarity(x1, x2, dim=1, eps=1e-8):
+    """Returns cosine similarity between x1 and x2, computed along dim."""
+    w12 = torch.sum(x1 * x2, dim)
+    w1 = torch.norm(x1, 2, dim)
+    w2 = torch.norm(x2, 2, dim)
+    return (w12 / (w1 * w2).clamp(min=eps)).squeeze()
+
+
+def score_att2img(images, attributes, args):
+    """
+    Images: (n_image, n_regions, d) matrix of images
+    attributes: (n_caption, max_n_word, d) matrix of attributes
+    """
+    weiContext, attn = func_attention(attributes, images, args)
+    attributes = attributes.contiguous()
+    weiContext = weiContext.contiguous()
+    sim = cosine_similarity(attributes, weiContext, dim=2)
+    if args.agg_func == 'LogSumExp':
+        sim = torch.exp(args.lambda_lse * sim)
+        sim = sim.sum(dim=1, keepdim=True)
+        sim = torch.log(sim) / args.lambda_lse
+    elif args.agg_func == 'Max':
+        sim = sim.max(dim=1, keepdim=True)[0]
+    elif args.agg_func == 'Sum':
+        sim = sim.sum(dim=1, keepdim=True)
+    elif args.agg_func == 'Mean':
+        sim = sim.mean(dim=1, keepdim=True)
+    else:
+        raise ValueError("unknown aggfunc: {}".format(args.agg_func))
+
+    return sim
+
+def attention_loss(sim, labels, args):
+    # equation 11
+    gamma3 = args.gamma3
+    sim = gamma3 * sim
+    pred = sim.view(args.batch_size, -1)
+    loss = F.cross_entropy(pred, labels)
+    return loss

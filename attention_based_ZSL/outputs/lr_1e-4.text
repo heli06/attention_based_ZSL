@@ -1,0 +1,27 @@
+40.040.0 Epoch: [5] | Loss 2.1749 | ACC 0.4211 
+ Epoch: [10] | Loss 1.5157 | ACC 0.4875 
+ Epoch: [15] | Loss 1.4353 | ACC 0.5196 
+ Epoch: [20] | Loss 0.8996 | ACC 0.5263 
+ Epoch: [25] | Loss 0.8055 | ACC 0.5256 
+ Epoch: [30] | Loss 0.8139 | ACC 0.5255 
+ Epoch: [35] | Loss 0.9263 | ACC 0.5242 
+ Epoch: [40] | Loss 0.8868 | ACC 0.5250 
+ Epoch: [45] | Loss 0.8148 | ACC 0.5268 最大
+ Epoch: [50] | Loss 0.9441 | ACC 0.5243 
+ Epoch: [55] | Loss 0.9272 | ACC 0.5246 
+ Epoch: [60] | Loss 0.9898 | ACC 0.5253 
+ Epoch: [65] | Loss 0.7409 | ACC 0.5219 
+ Epoch: [70] | Loss 0.8202 | ACC 0.5245 
+ Epoch: [75] | Loss 0.8158 | ACC 0.5262 
+ Epoch: [80] | Loss 0.7869 | ACC 0.5209 
+ Epoch: [85] | Loss 0.7813 | ACC 0.5267 
+ Epoch: [90] | Loss 0.9900 | ACC 0.5210 
+ Epoch: [95] | Loss 0.8704 | ACC 0.5253 
+ Epoch: [100] | Loss 1.0571 | ACC 0.5233 
+ Epoch: [105] | Loss 0.9224 | ACC 0.5248 
+ Epoch: [110] | Loss 0.8129 | ACC 0.5258 
+ Epoch: [115] | Loss 0.7684 | ACC 0.5216 
+ Epoch: [120] | Loss 0.8708 | ACC 0.5263 
+ Epoch: [125] | Loss 1.0735 | ACC 0.5234 
+ Epoch: [130] | Loss 0.7165 | ACC 0.5227 
+ Epoch: [135] | Loss 0.8890 | ACC 0.5241 

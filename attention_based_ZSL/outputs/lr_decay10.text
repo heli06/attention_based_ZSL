@@ -1,0 +1,8 @@
+40.0 Epoch: [5] | Loss 2.1778 | ACC 0.4254 
+ Epoch: [10] | Loss 1.4331 | ACC 0.4771 
+ Epoch: [15] | Loss 1.5685 | ACC 0.4852 
+ Epoch: [20] | Loss 1.2993 | ACC 0.4847 
+ Epoch: [25] | Loss 1.2864 | ACC 0.4803 
+ Epoch: [30] | Loss 1.2025 | ACC 0.4862 
+ Epoch: [35] | Loss 1.3646 | ACC 0.4829 
+ Epoch: [40] | Loss 1.3735 | ACC 0.4808 

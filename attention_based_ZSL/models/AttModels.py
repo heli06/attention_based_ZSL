@@ -33,3 +33,12 @@ class AttDecoder(nn.Module):
         x = self.fc2(x)
         x = F.relu(x)
         return x
+
+class GRU(nn.Module):
+    def __init__(self, args):
+        super(GRU, self).__init__()
+        self.gru = nn.GRU(1, hidden_size=args.attn_embedDIM // 2, num_layers=2, batch_first=True, bidirectional=True)
+    def forward(self, input):
+        self.gru.flatten_parameters()
+        x, hn = self.gru(input, None)
+        return x

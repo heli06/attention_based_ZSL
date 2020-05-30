@@ -69,6 +69,7 @@ class Resnet101(nn.Module):
         # torch.Size([1, 512, 31, 31])
         x = self.layer3(x)
         # torch.Size([1, 1024, 16, 16])
+        feature = x.clone()
         x = self.layer4(x)
         # torch.Size([1, 2048, 8, 8])
         # feature = x
@@ -79,7 +80,7 @@ class Resnet101(nn.Module):
         # x = F.relu(x)
         # x = self.fc2(x)
 
-        return nn.functional.normalize(x, p=2, dim=1)
+        return nn.functional.normalize(x, p=2, dim=1), feature
 
 class ImgDecoder(nn.Module):
     def __init__(self,args):
