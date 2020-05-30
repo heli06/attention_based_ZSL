@@ -121,6 +121,7 @@ def func_attention(query, context, args):
     context: (n_context, sourceL, d)
     """
     context = context.transpose(1, 2)
+
     smooth = args.lambda_softmax
 
     batch_size_q, queryL = query.size(0), query.size(1)
@@ -194,8 +195,8 @@ def score_att2img(images, attributes, args):
 
 def attention_loss(sim, labels, args):
     # equation 11
-    gamma3 = args.gamma3
-    sim = gamma3 * sim
+    smooth = args.lambda_softmax2
+    sim = smooth * sim
     pred = sim.view(args.batch_size, -1)
     loss = F.cross_entropy(pred, labels)
     return loss

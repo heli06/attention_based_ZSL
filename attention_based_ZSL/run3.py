@@ -79,9 +79,11 @@ parser.add_argument('--gamma_hinge',default = 1.0)
 parser.add_argument('--smooth_gamma',type=float,default=10.0)
 
 # attn_gamma
-parser.add_argument('--attn_gamma_1',type=float, default=5.0)
-parser.add_argument('--attn_gamma_2',type=float, default=5.0)
-parser.add_argument('--attn_gamma_3',type=float, default=10.0)
+parser.add_argument('--lambda_softmax', type=float, default=9.0)
+parser.add_argument('--lambda_lse', type=float, default=6.0)
+parser.add_argument('--agg_func', type=str, default='LogSumExp')
+parser.add_argument('--lambda_softmax2', type=float, default=10.0)
+
 
 # 新增加的载入ZSL和GZSL文件的参数
 parser.add_argument('--train_class_id',default = 'train_class_id.txt')

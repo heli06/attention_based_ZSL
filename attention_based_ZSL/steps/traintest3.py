@@ -200,7 +200,7 @@ def train3(image_model, att_model, Attention, train_loader, test_seen_loader, te
             loss_meter.update(loss.item(), B)
             batch_time.update(time.time() - end_time)
             
-            if i % 5 == 0:
+            if i % 50 == 0:
                 print('epoch: %d | iteration = %d | loss = %f'
                       %(epoch, i, loss))
                 # end_epoch_time = time.time()
@@ -215,7 +215,7 @@ def train3(image_model, att_model, Attention, train_loader, test_seen_loader, te
             image_model.eval()
             att_model.eval()
             proj_net.eval()
-            acc_zsl = compute_accuracy(image_model, att_model, proj_net,
+            acc_zsl = compute_accuracy(image_model, att_model, proj_net, Attention,
                                        test_unseen_loader, test_att, test_id, args)
 
             info = ' Epoch: [{0}] | Loss {loss_:.4f} | ACC {acc:.4f} \n'.format(epoch, loss_=loss, acc=acc_zsl)
@@ -243,67 +243,7 @@ def train3(image_model, att_model, Attention, train_loader, test_seen_loader, te
                     % (pre_epoch, i, pre_acc, pre_seen, pre_unseen, pre_H))
             """
 
-def compute_accuracy(image_model, att_model, proj_net, test_loader, test_att, test_id, args):
-    def gru_pred(img_features, att_features):
-        def func_attention(query, context):
-            """
-            query: batch x ndf x queryL
-            context: batch x ndf x ih x iw (sourceL=ihxiw)
-            mask: batch_size x sourceL
-            """
-            batch_size, queryL = query.size(0), query.size(1)
-            sourceL = context.size(2)
-
-            # --> batch x sourceL x ndf
-            context = context.view(batch_size, -1, sourceL)
-            contextT = torch.transpose(context, 1, 2).contiguous()
-
-            # Get attention
-            # (batch x sourceL x ndf)(batch x ndf x queryL)
-            # -->batch x sourceL x queryL
-            attn = torch.bmm(contextT, query.transpose(1, 2))  # Eq. (7) in AttnGAN paper
-            # --> batch*sourceL x queryL
-            attn = attn.view(batch_size * sourceL, queryL)
-            attn = nn.Softmax()(attn)  # Eq. (8)
-
-            # --> batch x sourceL x queryL
-            attn = attn.view(batch_size, sourceL, queryL)
-            # --> batch*queryL x sourceL
-            attn = torch.transpose(attn, 1, 2).contiguous()
-            attn = attn.view(batch_size * queryL, sourceL)
-            #  Eq. (9)
-            gamma1 = args.attn_gamma_1
-            attn = attn * gamma1
-            attn = nn.Softmax()(attn)
-            attn = attn.view(batch_size, queryL, sourceL)
-            # --> batch x sourceL x queryL
-            attnT = torch.transpose(attn, 1, 2).contiguous()
-
-            # (batch x ndf x sourceL)(batch x sourceL x queryL)
-            # --> batch x ndf x queryL
-            weightedContext = torch.bmm(context, attnT)
-
-            return weightedContext, attn
-        # --> batch x ndf x queryL
-        weiContext, attn = func_attention(att_features, img_features)
-
-        weiContext = weiContext.transpose(1, 2).contiguous()
-        gamma2 = args.attn_gamma_2
-        # batch_size*150, 312
-        cos_similarity = F.cosine_similarity(att_features, weiContext)
-        cos_similarity = torch.exp(gamma2 * cos_similarity)
-        # batch_size*150
-        # 此处和论文相符，但和源码不符
-        cos_similarity = torch.log(
-            torch.pow(torch.sum(cos_similarity, 1), 1 / gamma2))
-
-        # equation 11
-        gamma3 = args.attn_gamma_3
-        cos_similarity = gamma3 * cos_similarity
-        pred = cos_similarity.view(test_size, -1)
-        pred = F.softmax(pred)
-        return pred
-
+def compute_accuracy(image_model, att_model, proj_net, Attention, test_loader, test_att, test_id, args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     outpred = []
     test_label = []
@@ -328,7 +268,7 @@ def compute_accuracy(image_model, att_model, proj_net, test_loader, test_att, te
             output_repeat = image_feature[j, :, :].repeat(test_size, 1, 1) # test_size, 128, 256
             # print('output_repeat', output_repeat.size())
             # print('test_att_output', test_att_output.size())
-            output = gru_pred(output_repeat, test_att_output)
+            output = Attention.score_att2img(output_repeat, test_att_output, args)
             index = int(torch.max(output[:, 0], -1)[1])
             outputLabel = test_id[index]
             outpred.append(outputLabel)
