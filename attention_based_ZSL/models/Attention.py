@@ -120,8 +120,6 @@ def func_attention(query, context, args):
     query: (n_context, queryL, d)
     context: (n_context, sourceL, d)
     """
-    context = context.transpose(1, 2)
-
     smooth = args.lambda_softmax
 
     batch_size_q, queryL = query.size(0), query.size(1)
@@ -168,15 +166,17 @@ def cosine_similarity(x1, x2, dim=1, eps=1e-8):
     w2 = torch.norm(x2, 2, dim)
     return (w12 / (w1 * w2).clamp(min=eps)).squeeze()
 
-
 def score_att2img(images, attributes, args):
     """
-    Images: (n_image, n_regions, d) matrix of images
+    Images: (n_image, d, n_regions) matrix of images
     attributes: (n_caption, max_n_word, d) matrix of attributes
     """
+    # --> (batch, queryL, d)
     weiContext, attn = func_attention(attributes, images, args)
     attributes = attributes.contiguous()
     weiContext = weiContext.contiguous()
+
+    # --> (batch, queryL)
     sim = cosine_similarity(attributes, weiContext, dim=2)
     if args.agg_func == 'LogSumExp':
         sim = torch.exp(args.lambda_lse * sim)

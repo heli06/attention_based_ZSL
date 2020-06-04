@@ -11,15 +11,15 @@ import dateutil.tz
 import numpy as np
 from PIL import Image
 from dataloaders.dataset import ZSLDataset
-from models import ImageModels, AttModels, ImageModels2
+from models import ImageModels, AttModels, ImageModels2, ImageModels3
 from models import ModalityClassifier, ModalityTransformer, Attention
 from models import RelationNet
-from steps import traintest3
+from steps import traintest4
 import torchvision.transforms as transforms 
 import scipy.io as sio
 
 # 指定使用的显卡，选利用率低的
-os.environ['CUDA_VISIBLE_DEVICES']='3'
+os.environ['CUDA_VISIBLE_DEVICES']='0,1,2,3'
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 #'/media/shawn/data/Data/birds'
@@ -62,12 +62,8 @@ parser.add_argument('--img_outDIM',type=int, default = 1024)
 
 parser.add_argument('--rel_hidDIM',type=int, default = 72)
 
-parser.add_argument('--attn_embedDIM',type=int, default = 128)
-
 parser.add_argument('--smooth_gamma_r',type=float,default=40.0)
 parser.add_argument('--save_file',type=str,default='result.text')
-parser.add_argument('--Loss_Attn',default = True)
-parser.add_argument('--gamma_attn',default = 0.1)
 parser.add_argument('--Loss_BCE',default = False)
 parser.add_argument('--Loss_CE',default = False)
 parser.add_argument('--Loss_cont',default = False)
@@ -80,13 +76,6 @@ parser.add_argument('--Loss_hinge',default = False)
 parser.add_argument('--gamma_hinge',default = 1.0)
 
 parser.add_argument('--smooth_gamma',type=float,default=10.0)
-
-# attn_gamma
-parser.add_argument('--lambda_softmax', type=float, default=9.0)
-parser.add_argument('--lambda_lse', type=float, default=6.0)
-parser.add_argument('--agg_func', type=str, default='LogSumExp')
-parser.add_argument('--lambda_softmax2', type=float, default=10.0)
-
 
 # 新增加的载入ZSL和GZSL文件的参数
 parser.add_argument('--train_class_id',default = 'train_class_id.txt')
@@ -169,8 +158,8 @@ test_unseen_loader = torch.utils.data.DataLoader(
     dataset_test, batch_size=args.batch_size,
     drop_last=False, shuffle=False,num_workers=args.workers, worker_init_fn=worker_init_fn)
 
-image_model = ImageModels2.Resnet101()
+image_model = ImageModels3.Resnet101()
 # image_model = ImageModels2.Resnet101()
 relation_net = RelationNet.RelationNet(args)
 
-traintest3.train3(image_model, AttModels, relation_net, Attention, train_loader, test_seen_loader, test_unseen_loader, args)
+traintest4.train4(image_model, AttModels, relation_net, Attention, train_loader, test_seen_loader, test_unseen_loader, args)

@@ -9,9 +9,9 @@ from .kNN import kNNClassify
 from .util import *
 from sklearn.metrics import accuracy_score
 
-def train3(image_model, AttModels, relation_net, Attention, train_loader, test_seen_loader, test_unseen_loader, args):
+def train4(image_model, AttModels, relation_net, Attention, train_loader, test_seen_loader, test_unseen_loader, args):
+    att_proj = AttModels.AttProj(args)
     att_model = AttModels.AttEncoder(args)
-    att_gru = AttModels.GRU(args)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.set_grad_enabled(True)
     # Initialize all of the statistics we want to keep track of
@@ -42,20 +42,18 @@ def train3(image_model, AttModels, relation_net, Attention, train_loader, test_s
     if torch.cuda.device_count() > 1:
         image_model = nn.DataParallel(image_model)
         att_model = nn.DataParallel(att_model)
-        att_gru = nn.DataParallel(att_gru)
         relation_net = nn.DataParallel(relation_net)
     
     image_model = image_model.to(device)
     att_model = att_model.to(device)
-    att_gru = att_gru.to(device)
     relation_net = relation_net.to(device)
-
+    att_proj = att_proj.to(device)
     # Set up the optimizer
     image_trainables = [p for p in image_model.parameters() if p.requires_grad] # if p.requires_grad
     att_trainables = [p for p in att_model.parameters() if p.requires_grad]
-    gru_trainables = [p for p in att_gru.parameters() if p.requires_grad]
     rel_trainables = [p for p in relation_net.parameters() if p.requires_grad]
-    trainables = image_trainables + att_trainables + gru_trainables + rel_trainables
+    proj_trainables = [p for p in att_proj.parameters() if p.requires_grad]
+    trainables = image_trainables + att_trainables + rel_trainables + proj_trainables
     if args.optim == 'sgd':
         optimizer = torch.optim.SGD(trainables, args.lr,
                                     momentum=args.momentum,
@@ -77,12 +75,14 @@ def train3(image_model, AttModels, relation_net, Attention, train_loader, test_s
                     state[k] = v.to(device)
         print("loaded state dict from epoch %d" % epoch)
     """
-
+    
+    
     print("current #steps=%s, #epochs=%s" % (global_step, epoch))
     print("start training...")
     image_model.train()
     att_model.train()
-    att_gru.train()
+    relation_net.train()
+    att_proj.train()
     criterion_hinge = nn.TripletMarginLoss(margin=1.0,p=2)
     criterion_e = nn.MSELoss()
     criterion_s = nn.CosineSimilarity()
@@ -90,9 +90,6 @@ def train3(image_model, AttModels, relation_net, Attention, train_loader, test_s
     criterion_k = nn.KLDivLoss()
     criterion_m = nn.MSELoss()
     criterion_b = nn.BCELoss()
-    # criterion_attn =  DataParallelCriterion(criterion_attn)
-    # image_features: batch_size*150. 128, 256
-    # att_features: batch_size*150, 312, 128
     
     # 载入ZSL和GZSL评估所需要的id和attr文件
     print('载入id和attr文件')
@@ -120,26 +117,14 @@ def train3(image_model, AttModels, relation_net, Attention, train_loader, test_s
     att_num = train_att.size()[0]
     nor_train = normalizeFeature(train_att) # 200, 312
 
-    start_epoch_time = time.time()
     while epoch<=500:
         epoch += 1
         adjust_learning_rate(args.lr, args.lr_decay, optimizer, epoch)
         end_time = time.time()
         image_model.train()
         att_model.train()
-        att_gru.train()
-
-        if epoch % 1 == 0:
-            # train: (8821,)
-            # trainval: (7057,)
-            # test_seen: (1764,)
-            # test_unseen: (2967,)
-            image_model.eval()
-            att_model.eval()
-            att_gru.eval()
-            acc_zsl = compute_accuracy(image_model, att_model, att_gru, relation_net,
-                                       test_unseen_loader, test_att, test_id, args)
-            print(acc_zsl)
+        relation_net.train()
+        att_proj.train()
 
         for i, (image_input, att_input, neg_att_input, cls_id, key, label) in enumerate(train_loader):
             att_input = att_input.float().to(device)   
@@ -154,22 +139,21 @@ def train3(image_model, AttModels, relation_net, Attention, train_loader, test_s
             final_att_output = None
 
             # 输出属性向量
-            nor_att = normalizeFeature(att_input)  # batch_size, 312
-            att_output = att_gru(att_input.unsqueeze(2))
+            nor_att = normalizeFeature(att_input) # batch_size, 312
+            train_att_out = att_model(train_att) #  150, 1024
+            att_output = att_proj(att_input)
 
             sim_mat = nor_att.mm(nor_train.t()) # batch_size, 150
             # conti_label = F.softmax(sim_mat)
-            new_label = sim_mat.argmax(dim=-1).long().to(device) # batch_size 0~149
+            new_label = sim_mat.argmax(dim=-1).long().to(device) # batch_size 0~199
 
             # 输出图像特征向量
-            image_output, attn_map = image_model(image_input, att_output, args)  # batch_size, 1024
-            output_repeat = image_output.repeat_interleave(att_num, 0)  # batch_size * 150, 1024
+            image_output, attn_map = image_model(image_input, att_output)  # batch_size, 1024
+            output_repeat = image_output.repeat_interleave(att_num, 0) # batch_size * 150, 1024
 
-            train_att_output = att_model(train_att)
-            train_att_output_repeat = train_att_output.repeat(B, 1)  # batch_size * 150, 1024
-
-            output = relation_net(torch.cat((output_repeat, train_att_output_repeat), dim=-1))  # batch_size * 150
-            pred = output.view(B, -1) * args.smooth_gamma_r  # batch_size, 150
+            train_att_out_repeat = train_att_out.repeat(B, 1) # batch_size * 150, 1024
+            output = relation_net(torch.cat((output_repeat, train_att_out_repeat), dim=-1)) # batch_size * 150
+            pred = output.view(B,-1)*args.smooth_gamma_r # batch_size, 150
             """
             for j in range(len(label)):
                 output_repeat = image_output[j, :].repeat(att_num, 1)
@@ -183,6 +167,7 @@ def train3(image_model, AttModels, relation_net, Attention, train_loader, test_s
             # pred = pred*50.0
             # p0 = F.softmax(pred, dim=-1)
             # loss = torch.sum(p0 * (F.log_softmax(pred, dim=-1) - F.log_softmax(conti_label, dim=-1)), 1).sum()
+
             """
             if args.Loss_BCE:
                 loss = criterion_b(output, y)
@@ -209,6 +194,7 @@ def train3(image_model, AttModels, relation_net, Attention, train_loader, test_s
                 hinge_loss = hinge_AII + hinge_IAA
                 loss += hinge_loss*args.gamma_hinge
             """
+
             loss.backward()
             optimizer.step()
            
@@ -216,28 +202,26 @@ def train3(image_model, AttModels, relation_net, Attention, train_loader, test_s
             loss_meter.update(loss.item(), B)
             batch_time.update(time.time() - end_time)
             
-            if i % 50 == 0:
+            if i % 5 == 0:
                 print('epoch: %d | iteration = %d | loss = %f'
                       %(epoch, i, loss))
-                # end_epoch_time = time.time()
-                # print(end_epoch_time - start_epoch_time)
-                # start_epoch_time = end_epoch_time
                 
-        if epoch % 1 == 0:
+        if epoch % 5 == 0:
             # train: (8821,)
             # trainval: (7057,)
             # test_seen: (1764,)
             # test_unseen: (2967,)
             image_model.eval()
             att_model.eval()
-            att_gru.eval()
-            acc_zsl = compute_accuracy(image_model, att_model, att_gru, relation_net,
-                                       test_unseen_loader, test_att, test_id, args)
-
-            info = ' Epoch: [{0}] | Loss {loss_:.4f} | ACC {acc:.4f} \n'.format(epoch, loss_=loss, acc=acc_zsl)
+            relation_net.eval()
+            att_proj.eval()
+            acc_zsl = compute_accuracy(image_model, att_model, relation_net, att_proj,
+                                       test_unseen_loader, test_att, test_id, args)            
+                       
+            info = ' Epoch: [{0}] | Loss {loss_:.4f} | ACC {acc:.4f} \n'.format(epoch,loss_=loss,acc=acc_zsl)
             print(info)
-
-            save_path = os.path.join('outputs', args.save_file)
+            
+            save_path = os.path.join('outputs',args.save_file)
             with open(save_path, "a") as file:
                 file.write(info)
             
@@ -259,16 +243,14 @@ def train3(image_model, AttModels, relation_net, Attention, train_loader, test_s
                     % (pre_epoch, i, pre_acc, pre_seen, pre_unseen, pre_H))
             """
 
-def compute_accuracy(image_model, att_model, att_gru, relation_net, test_loader, test_att, test_id, args):
+def compute_accuracy(image_model, att_model, relation_net, att_proj, test_loader, test_att, test_id, args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     outpred = []
     test_label = []
     
-    test_att = torch.from_numpy(test_att) # test_size, 312
-    test_att = test_att.float().to(device) # test_size, 312, 1
-    # print('test_att', test_att.size())
-    test_att_output = att_model(test_att)  # test_size, 312, 128
-    # print('test_att_output', test_att_output.size())
+    test_att = torch.from_numpy(test_att)
+    test_att = test_att.float().to(device)
+    test_att_output = att_model(test_att)
     test_size = test_att_output.size()[0]
     
     for i, (image_input, att_input, cls_id, key, label) in enumerate(test_loader):
@@ -277,9 +259,9 @@ def compute_accuracy(image_model, att_model, att_gru, relation_net, test_loader,
         image_input = image_input.float().to(device)
         image_input = image_input.squeeze(1)
 
-        att_output = att_gru(att_input)
-        image_output, attn_map = image_model(image_input, att_output, args)
-
+        att_output = att_proj(att_input)
+        image_output, attn_map = image_model(image_input, att_output)
+        
         for j in range(len(label)):
             output_repeat = image_output[j, :].repeat(test_size, 1)
             output = relation_net(torch.cat((output_repeat, test_att_output), dim=-1))

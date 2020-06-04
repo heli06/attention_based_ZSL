@@ -47,8 +47,8 @@ class Resnet101(nn.Module):
         self.layer4 = model.layer4
         self.avgpool = model.avgpool
         
-        self.fc1 = nn.Linear(2048,1024)
-        # self.fc2 = nn.Linear(2048,2048)
+        self.fc1 = nn.Linear(2048, 2048)
+        self.fc2 = nn.Linear(2048, 1024)
 
     def init_trainable_weights(self):
         initrange = 0.1   
@@ -56,29 +56,31 @@ class Resnet101(nn.Module):
         # self.fc2.weight.data.uniform_(-initrange, initrange)
 
     def forward(self, x):
-        x = nn.functional.interpolate(x,size=(244, 244), mode='bilinear', align_corners=False)
+        x = nn.functional.interpolate(x, size=(244, 244), mode='bilinear', align_corners=False)
+        # 1, 64, 122, 122。这里的1是batch_size
         x = self.conv1(x)
-        # 经过上一步操作后，torch.Size([1, 64, 122, 122])
         x = self.bn1(x)
         x = self.relu(x)
+        # 1, 64, 61, 61
         x = self.maxpool(x)
-        # torch.Size([1, 64, 61, 61])
+        # 1, 256, 61, 61
         x = self.layer1(x)
-        # torch.Size([1, 256, 61, 61])
+        # 1, 512, 31, 31
         x = self.layer2(x)
-        # torch.Size([1, 512, 31, 31])
+        # 1, 1024, 16, 16
         x = self.layer3(x)
-        # torch.Size([1, 1024, 16, 16])
+
         feature = x.clone()
+
+        # 1, 2048, 8, 8
         x = self.layer4(x)
-        # torch.Size([1, 2048, 8, 8])
-        # feature = x
+        # 1, 2048, 1, 1
         x = self.avgpool(x)
-        # torch.Size([1, 2048, 1, 1])
+        # 1, 2048
         x = x.view(x.size(0), -1)
         x = self.fc1(x)
-        # x = F.relu(x)
-        # x = self.fc2(x)
+        x = F.relu(x)
+        x = self.fc2(x)
 
         return nn.functional.normalize(x, p=2, dim=1), feature
 

@@ -4,7 +4,6 @@ import torch.nn.functional as F
 import torchvision.models as imagemodels
 import torch.utils.model_zoo as model_zoo
 from torchvision import models
-from . import Attention
 
 """
 class Resnet101(imagemodels.ResNet):
@@ -53,13 +52,27 @@ class Resnet101(nn.Module):
         self.fc2 = nn.Linear(2048, 1024)
 
         self.conv_map = nn.Conv2d(1024, 128, 1, stride=1)
+        self.sim_fc1 = nn.Linear(256, 16)
+        self.sim_fc2 = nn.Linear(16, 1)
+
 
     def init_trainable_weights(self):
         initrange = 0.1
         self.fc1.weight.data.uniform_(-initrange, initrange)
         self.fc2.weight.data.uniform_(-initrange, initrange)
+        self.sim_fc1.weight.data.uniform_(-initrange, initrange)
+        self.sim_fc2.weight.data.uniform_(-initrange, initrange)
 
-    def forward(self, x, attr, args):
+    def similarity(self, x1, x2):
+        return F.cosine_similarity(x1, x2, dim=1)
+        # x = torch.cat((x1.permute(0, 2, 1), x2.permute(0, 2, 1)), dim=-1)
+        # x = self.sim_fc1(x)
+        # x = self.sim_fc2(x)
+        # x = torch.sigmoid(x)
+        # return x.squeeze()
+
+    # attr: 1, 128, 256
+    def forward(self, x, attr):
         batch_size = x.size(0)
         x = nn.functional.interpolate(x, size=(244, 244), mode='bilinear', align_corners=False)
         # 1, 64, 122, 122。这里的1是batch_size
@@ -79,9 +92,19 @@ class Resnet101(nn.Module):
         x_map = self.conv_map(x)
         # 1, 128, 256
         x_map = x_map.view(x_map.size(0), x_map.size(1), -1)
-        # sim = Attention.score_att2img(x_map, attr, args)
-        weiContext, attn = Attention.func_attention(x_map.permute(0, 2, 1), attr, args)
-        print(weiContext.size())
+        # 1, 128, 256
+        attr_repeat = attr.repeat(1, 1, 256).reshape(batch_size, 256, 128).permute(0, 2, 1)
+        # 1, 256
+        attn_map = self.similarity(x_map, attr_repeat)
+
+        # 1, 1024, 256
+        x = x.view(x.size(0), x.size(1), -1)
+        # 1024, 1, 256
+        x = x.permute(1, 0, 2) * attn_map
+        # 1, 1024, 256
+        x = x.permute(1, 0, 2)
+        # 1, 1024, 16, 16
+        x = x.view(x.size(0), x.size(1), 16, 16)
 
         # 1, 2048, 8, 8
         x = self.layer4(x)
@@ -93,4 +116,4 @@ class Resnet101(nn.Module):
         x = F.relu(x)
         x = self.fc2(x)
 
-        return nn.functional.normalize(x, p=2, dim=1), None
+        return nn.functional.normalize(x, p=2, dim=1), attn_map

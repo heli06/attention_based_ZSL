@@ -34,6 +34,20 @@ class AttDecoder(nn.Module):
         x = F.relu(x)
         return x
 
+class AttProj(nn.Module):
+    def __init__(self,args):
+        super(AttProj,self).__init__()
+        self.fc1 = nn.Linear(args.att_DIM,args.att_mapHidDIM)
+        self.fc2 = nn.Linear(args.att_mapHidDIM, args.att_mapOutDIM)
+        nn.init.xavier_uniform_(self.fc1.weight.data)
+        nn.init.xavier_uniform_(self.fc2.weight.data)
+    def forward(self, input):
+        x = self.fc1(input)
+        x = F.relu(x)
+        x = self.fc2(x)
+        return nn.functional.normalize(x, p=2, dim=1)
+
+
 class GRU(nn.Module):
     def __init__(self, args):
         super(GRU, self).__init__()
