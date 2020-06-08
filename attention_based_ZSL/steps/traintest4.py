@@ -43,6 +43,7 @@ def train4(image_model, AttModels, relation_net, Attention, train_loader, test_s
         image_model = nn.DataParallel(image_model)
         att_model = nn.DataParallel(att_model)
         relation_net = nn.DataParallel(relation_net)
+        att_proj = nn.DataParallel(att_proj)
     
     image_model = image_model.to(device)
     att_model = att_model.to(device)
@@ -141,15 +142,15 @@ def train4(image_model, AttModels, relation_net, Attention, train_loader, test_s
             # 输出属性向量
             nor_att = normalizeFeature(att_input) # batch_size, 312
             train_att_out = att_model(train_att) #  150, 1024
-            att_output = att_proj(att_input)
 
             sim_mat = nor_att.mm(nor_train.t()) # batch_size, 150
             # conti_label = F.softmax(sim_mat)
             new_label = sim_mat.argmax(dim=-1).long().to(device) # batch_size 0~199
 
             # 输出图像特征向量
-            image_output, attn_map = image_model(image_input, att_output)  # batch_size, 1024
-            output_repeat = image_output.repeat_interleave(att_num, 0) # batch_size * 150, 1024
+            att_output = att_proj(att_input)
+            output, attn_map = image_model(image_input, att_output)
+            output_repeat = output.repeat_interleave(att_num, 0)
 
             train_att_out_repeat = train_att_out.repeat(B, 1) # batch_size * 150, 1024
             output = relation_net(torch.cat((output_repeat, train_att_out_repeat), dim=-1)) # batch_size * 150
@@ -251,6 +252,7 @@ def compute_accuracy(image_model, att_model, relation_net, att_proj, test_loader
     test_att = torch.from_numpy(test_att)
     test_att = test_att.float().to(device)
     test_att_output = att_model(test_att)
+    test_att_map_output = att_proj(test_att)
     test_size = test_att_output.size()[0]
     
     for i, (image_input, att_input, cls_id, key, label) in enumerate(test_loader):
@@ -258,13 +260,11 @@ def compute_accuracy(image_model, att_model, relation_net, att_proj, test_loader
         label = list(label.numpy())
         image_input = image_input.float().to(device)
         image_input = image_input.squeeze(1)
-
-        att_output = att_proj(att_input)
-        image_output, attn_map = image_model(image_input, att_output)
         
         for j in range(len(label)):
-            output_repeat = image_output[j, :].repeat(test_size, 1)
-            output = relation_net(torch.cat((output_repeat, test_att_output), dim=-1))
+            img_input = image_input[j].unsqueeze(0).repeat_interleave(test_size, 0)
+            img_output, attn_map = image_model(img_input, test_att_map_output)
+            output = relation_net(torch.cat((img_output, test_att_output), dim=-1))
             index = int(torch.max(output[:, 0], -1)[1])
             outputLabel = test_id[index]
             outpred.append(outputLabel)

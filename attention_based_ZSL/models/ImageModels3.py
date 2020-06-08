@@ -64,7 +64,10 @@ class Resnet101(nn.Module):
         self.sim_fc2.weight.data.uniform_(-initrange, initrange)
 
     def similarity(self, x1, x2):
-        return F.cosine_similarity(x1, x2, dim=1)
+        return torch.sum(x1 * x2, dim=1)
+
+        # return F.cosine_similarity(x1, x2, dim=1)
+
         # x = torch.cat((x1.permute(0, 2, 1), x2.permute(0, 2, 1)), dim=-1)
         # x = self.sim_fc1(x)
         # x = self.sim_fc2(x)
@@ -90,9 +93,11 @@ class Resnet101(nn.Module):
 
         # 1, 128, 16, 16
         x_map = self.conv_map(x)
+        x_map = nn.functional.normalize(x_map, p=2, dim=1)
         # 1, 128, 256
         x_map = x_map.view(x_map.size(0), x_map.size(1), -1)
         # 1, 128, 256
+        attr = nn.functional.normalize(attr, p=2, dim=1)
         attr_repeat = attr.repeat(1, 1, 256).reshape(batch_size, 256, 128).permute(0, 2, 1)
         # 1, 256
         attn_map = self.similarity(x_map, attr_repeat)
