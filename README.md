@@ -1,2 +1,2 @@
 # attention_based_ZSL
-冲击IJCAI
+废案
